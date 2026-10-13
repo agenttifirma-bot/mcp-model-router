@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
 import { MockAgent, setGlobalDispatcher, getGlobalDispatcher } from "undici";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -22,6 +22,15 @@ describe("runEval", () => {
   let mockAgent: MockAgent;
   const originalDispatcher = getGlobalDispatcher();
   const dirs: string[] = [];
+  let evalDir: string;
+  let fileCounter = 0;
+  const originalEvalDir = process.env.EVAL_DIR;
+
+  beforeAll(() => {
+    evalDir = mkdtempSync(join(tmpdir(), "mcp-model-router-eval-"));
+    dirs.push(evalDir);
+    process.env.EVAL_DIR = evalDir;
+  });
 
   beforeEach(() => {
     mockAgent = new MockAgent();
@@ -35,13 +44,13 @@ describe("runEval", () => {
   });
 
   afterAll(() => {
+    if (originalEvalDir === undefined) delete process.env.EVAL_DIR;
+    else process.env.EVAL_DIR = originalEvalDir;
     for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
   });
 
   function writePromptSet(json: unknown): string {
-    const dir = mkdtempSync(join(tmpdir(), "mcp-model-router-eval-"));
-    dirs.push(dir);
-    const path = join(dir, "prompts.json");
+    const path = join(evalDir, `prompts-${fileCounter++}.json`);
     writeFileSync(path, JSON.stringify(json), "utf8");
     return path;
   }
@@ -88,11 +97,11 @@ describe("runEval", () => {
       .reply(200, {
         model: "model-a",
         choices: [{ message: { content: "vastaus" } }],
-        usage: { prompt_tokens: 1_000_000, completion_tokens: 1_000_000 },
+        usage: { prompt_tokens: 1000, completion_tokens: 1000 },
       });
 
     const config = baseConfig({
-      pricing: { "model-a": { inputPerMillionUsd: 1, outputPerMillionUsd: 2 } },
+      pricing: { "model-a": { inputPerMillionUsd: 1000, outputPerMillionUsd: 2000 } },
     });
 
     const report = await runEval(config, { promptSetPath: promptPath, models: ["model-a"] });
