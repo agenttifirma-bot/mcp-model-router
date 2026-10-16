@@ -104,7 +104,25 @@ export async function routeAndComplete(
     usedFallback = true;
   }
 
-  const result = await callChatCompletion({ ...callOpts, model: resolveModelId(config.provider, route.fallbackModel!) });
+  let result;
+  try {
+    result = await callChatCompletion({ ...callOpts, model: resolveModelId(config.provider, route.fallbackModel!) });
+  } catch (err) {
+    // Budjettiraja ei ole mallivirhe: sitä ei kirjata error-riviksi eikä sen viestiä sotketa.
+    if (err instanceof LimitExceededError) throw err;
+    const fallbackError = err instanceof Error ? err.message : String(err);
+    const combined = `Päämalli '${route.model}' epäonnistui: ${primaryError}. Varamalli '${route.fallbackModel}' epäonnistui: ${fallbackError}`;
+    db?.insertCallLog({
+      taskType: input.taskType,
+      modelRequested: route.model,
+      modelUsed: route.fallbackModel!,
+      usedFallback: true,
+      latencyMs: Date.now() - start,
+      status: "error",
+      errorMessage: combined,
+    });
+    throw new Error(combined);
+  }
   const latencyMs = Date.now() - start;
   db?.insertCallLog({
     taskType: input.taskType,
