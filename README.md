@@ -91,7 +91,7 @@ Tehtävätyypeittäin määritellyt mallit:
                        └───────────┬──────────────┘
                                    │
                                    ▼
-                         SQLite (call_log, eval_result)
+                         SQLite (call_log, eval_run, eval_result, token_budget)
 ```
 
 - **Siirtotavat**: stdio (paikalliseen käyttöön, esim. Claude Desktop/Cursor)
@@ -233,7 +233,7 @@ tasks:
 
 | Työkalu              | Kuvaus                                                                 |
 |-----------------------|-------------------------------------------------------------------------|
-| `route_and_complete`  | Valitsee mallin `taskType`-parametrin mukaan ja täydentää promptin. Käyttää varamallia tarvittaessa. |
+| `route_and_complete`  | Valitsee mallin `taskType`-parametrin mukaan ja täydentää promptin. Käyttää varamallia tarvittaessa. Valinnainen `maxTokens` (kokonaisluku 1-4096; suurempi arvo hylätään). |
 | `list_models`         | Listaa `config.yaml`:n tehtävätyypit ja niihin liitetyt mallit.        |
 | `get_usage`           | Palauttaa kulutuksen ja budjetin tilan LiteLLM:stä/OpenRouterista.     |
 | `run_eval`             | Ajaa JSON-prompt-sarjan usealla mallilla ja raportoi hinnan/viiveen/laadun. |
@@ -418,6 +418,13 @@ täyttyvät `null`:n sijaan. Huomaa hintavaikutus: judge tekee yhden
 ylimääräisen mallikutsun jokaista prompt-tapausta kohden, joten se sekä
 maksaa että kestää suunnilleen kaksinkertaisesti verrattuna
 avainsanatarkistukseen.
+
+Tuomarikutsun `max_tokens` on oletuksena 64, koska vastaus on yksi numero.
+Jos tuomarimalli käyttää päättelytokeneita, nosta arvoa valinnaisella
+`eval.judge.maxTokens`-asetuksella (1-4096). Jos tuomaripistettä ei saada
+(kutsu epäonnistuu tai vastauksesta ei löydy yksiselitteistä pistettä 1-5),
+piste jää `null`:ksi, ja syy näkyy tapauksen `judgeError`-kentässä sekä
+mallikohtaisessa `judgeErrorCount`-luvussa.
 
 **Valitse `eval.judge.model` eri malliksi kuin arvioitavat mallit.** Malli
 suosii tyypillisesti omaa vastaustyyliään (esim. omaa tapaansa jäsentää
