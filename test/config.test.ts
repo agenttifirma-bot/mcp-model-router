@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { resolveEnvPlaceholders, loadConfig } from "../src/config/load.js";
+import { resolveEnvPlaceholders, loadConfig, ConfigNotFoundError } from "../src/config/load.js";
 
 describe("resolveEnvPlaceholders", () => {
   it("korvaa ${NIMI}-viittauksen ympäristömuuttujalla", () => {
@@ -59,7 +59,18 @@ usage:
   });
 
   it("heittää selkeän virheen puuttuvasta tiedostosta", () => {
-    expect(() => loadConfig({ configPath: "/ei/olemassa/config.yaml", env: {} })).toThrow(/ei löytynyt/);
+    expect(() => loadConfig({ configPath: "/ei/olemassa/config.yaml", env: {} })).toThrow(/Config file not found at '\/ei\/olemassa\/config.yaml'.*CONFIG_PATH/);
+  });
+
+  it("puuttuvan tiedoston virhe on ConfigNotFoundError ja kertoo korjauksen", () => {
+    let err: unknown;
+    try {
+      loadConfig({ configPath: "/ei/olemassa/config.yaml", env: {} });
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(ConfigNotFoundError);
+    expect((err as Error).message).toContain("config.example.yaml");
   });
 
   it("heittää selkeän virheen puuttuvista pakollisista kentistä", () => {

@@ -1,4 +1,5 @@
 import { readFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { load as parseYaml } from "js-yaml";
 import { AppConfigSchema, type AppConfig } from "./schema.js";
 
@@ -40,6 +41,18 @@ function resolveDeep<T>(value: T, env: NodeJS.ProcessEnv): T {
   return value;
 }
 
+/** Heitetään, kun asetustiedostoa ei löydy. Viesti on valmis näytettäväksi ilman pinojälkeä. */
+export class ConfigNotFoundError extends Error {
+  constructor(configPath: string) {
+    super(
+      `Config file not found at '${resolve(configPath)}'. ` +
+        `Copy config.example.yaml to config.yaml and edit it, or set CONFIG_PATH to point to your own file. ` +
+        `With the npm package: cp node_modules/mcp-model-router/config.example.yaml config.yaml`,
+    );
+    this.name = "ConfigNotFoundError";
+  }
+}
+
 export interface LoadConfigOptions {
   configPath?: string;
   env?: NodeJS.ProcessEnv;
@@ -50,10 +63,7 @@ export function loadConfig(options: LoadConfigOptions = {}): AppConfig {
   const env = options.env ?? process.env;
 
   if (!existsSync(configPath)) {
-    throw new Error(
-      `Asetustiedostoa ei löytynyt polusta '${configPath}'. Kopioi config.example.yaml -> config.yaml ja muokkaa sitä, ` +
-        `tai aseta CONFIG_PATH-ympäristömuuttuja osoittamaan omaan tiedostoosi.`,
-    );
+    throw new ConfigNotFoundError(configPath);
   }
 
   const raw = readFileSync(configPath, "utf8");

@@ -30,6 +30,25 @@ niitä uudelleen. Se tekee kolme asiaa:
 SQLite-tietokantaa käytetään **vain** kutsulokille ja eval-tuloksille - ei
 kulutuksen tai budjetin kirjanpitoon.
 
+## Quick start from npm
+
+No clone needed. In an empty directory:
+
+```bash
+npm init -y
+npm i mcp-model-router
+cp node_modules/mcp-model-router/config.example.yaml config.yaml   # edit as needed
+CONFIG_PATH=./config.yaml npx mcp-model-router
+```
+
+The server speaks MCP over stdio by default, so it waits for a client on stdin. Without a config file it exits with code 1 and a one-line message that names the path it looked for. Set `MCP_TRANSPORT=http` for streamable HTTP (see below, in Finnish). Calling a model needs `LLM_API_KEY`; `list_models` does not.
+
+Check the server with [mcp-doctor](https://www.npmjs.com/package/@tonyweckstrom/mcp-doctor), no LLM key needed:
+
+```bash
+CONFIG_PATH=./config.yaml npx @tonyweckstrom/mcp-doctor --env CONFIG_PATH --strict -- node node_modules/mcp-model-router/dist/index.js
+```
+
 ## Nopea kokeilu
 
 Ensimmäinen `route_and_complete`-kutsu HTTP-tilassa

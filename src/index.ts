@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { loadConfig } from "./config/load.js";
+import { ConfigNotFoundError, loadConfig } from "./config/load.js";
 import { createServer } from "./server/createServer.js";
 import { startStdioTransport } from "./transport/stdio.js";
 import { startHttpTransport } from "./transport/http.js";
@@ -24,6 +24,11 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
+  if (err instanceof ConfigNotFoundError) {
+    console.error(`mcp-model-router: ${err.message}`);
+    process.exitCode = 1;
+    return;
+  }
   console.error("mcp-model-router käynnistys epäonnistui:", err);
   process.exitCode = 1;
 });
