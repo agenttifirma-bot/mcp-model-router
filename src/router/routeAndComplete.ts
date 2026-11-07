@@ -35,7 +35,8 @@ export async function routeAndComplete(
   input: RouteAndCompleteInput,
   db?: Db,
 ): Promise<RouteAndCompleteResult> {
-  const route = config.tasks[input.taskType];
+  // Vain config.yaml:n omat avaimet kelpaavat (ei periytyviä: constructor, toString, __proto__).
+  const route = Object.hasOwn(config.tasks, input.taskType) ? config.tasks[input.taskType] : undefined;
   if (!route) {
     throw new Error(
       `Tuntematon tehtävätyyppi '${input.taskType}'. Saatavilla config.yaml:ssa: ${Object.keys(config.tasks).join(", ")}`,

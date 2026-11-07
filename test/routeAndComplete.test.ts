@@ -74,6 +74,16 @@ describe("routeAndComplete", () => {
     );
   });
 
+  it.each(["constructor", "toString", "__proto__", "hasOwnProperty"])(
+    "hylkää periytyvän avaimen '%s' tehtävätyyppinä ennen mallikutsua",
+    async (taskType) => {
+      // disableNetConnect + ei interceptoreita: mallikutsu epäonnistuisi eri virheeseen.
+      await expect(routeAndComplete(baseConfig(), { taskType, prompt: "moi" })).rejects.toThrow(
+        /Tuntematon tehtävätyyppi/,
+      );
+    },
+  );
+
   it("karsii openrouter/-etuliitteen mallitunnisteesta kun provider.kind on openrouter", async () => {
     const config = baseConfig();
     config.provider.kind = "openrouter";
