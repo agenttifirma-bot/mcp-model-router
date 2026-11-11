@@ -478,9 +478,10 @@ separator).
 | pilkkominen (decomposition) | 2/5 (+2 timeouts), 45,151 ms, 0.001867 | 4/5, 28,640 ms, 0.001395 |
 
 **Interpretation:** the overall pass rate is close for both models, but
-`qwen3-coder` is both faster and cheaper in every task type in this run
-except that it was slower on the general task type, and it got through the
-decomposition tasks without timeouts. The two timeouts of
+`qwen3-coder` is both faster and cheaper in the coding, writing and
+decomposition task types of this run. In the general task type it was both
+slower (5,600 ms vs. 2,190 ms) and more expensive (0.000159 vs. 0.000119
+USD). It also got through the decomposition tasks without timeouts. The two timeouts of
 `deepseek-v4.1-flash` both hit decomposition tasks (with the 60 s default
 timeout) - see
 [Per-task-type timeout](#per-task-type-timeout-timeoutms), which exists for
@@ -673,6 +674,6 @@ CONFIG_PATH=$PWD/config.example.yaml npx @tonyweckstrom/mcp-doctor --env CONFIG_
   use (`usage.provider: openrouter`) does not require a database.
 - The model identifiers of the `tasks` block and of `run_eval` are LiteLLM
   `model_name` aliases (names defined in the LiteLLM configuration/proxy model
-  list), not directly the model identifiers of OpenRouter or another backend
-  - see [Model identifiers: LiteLLM vs. direct
+  list), not directly the model identifiers of OpenRouter or another backend.
+  See [Model identifiers: LiteLLM vs. direct
   OpenRouter](#model-identifiers-litellm-vs-direct-openrouter).
