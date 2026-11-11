@@ -18,7 +18,20 @@ const EvalPromptCaseSchema = z.object({
 });
 export type EvalPromptCase = z.infer<typeof EvalPromptCaseSchema>;
 
-const EvalPromptSetSchema = z.array(EvalPromptCaseSchema).min(1, "prompt-tiedostossa täytyy olla vähintään yksi tehtävä");
+const EvalPromptSetSchema = z
+  .array(EvalPromptCaseSchema)
+  .min(1, "prompt-tiedostossa täytyy olla vähintään yksi tehtävä")
+  .superRefine((cases, ctx) => {
+    // Yhteenvedot ja expectedContains-haku tunnistavat tapauksen id:n perusteella,
+    // joten toistuva id sekoittaisi läpäisyprosentit hiljaa.
+    const seen = new Set<string>();
+    cases.forEach((c, index) => {
+      if (seen.has(c.id)) {
+        ctx.addIssue({ code: "custom", path: [index, "id"], message: `id '${c.id}' toistuu; jokaisen tehtävän id:n täytyy olla yksilöllinen` });
+      }
+      seen.add(c.id);
+    });
+  });
 
 export function loadPromptSet(path: string): EvalPromptCase[] {
   const raw = readFileSync(path, "utf8");
@@ -316,6 +329,11 @@ export async function runEval(
   options: { evalDir?: string } = { evalDir: getEvalDirFromEnv() },
 ): Promise<EvalReport> {
   // Mallit tarkistetaan ensimmäisenä: ei tiedostojen lukua, ei kirjauksia, ei kutsuja.
+  // Sama malli kahdesti tuplaisi kutsut (ja kulut) sekä yhteenvetorivit.
+  const toistuvat = input.models.filter((m, i) => input.models.indexOf(m) !== i);
+  if (toistuvat.length > 0) {
+    throw new Error(`run_eval: sama malli on listalla useammin kuin kerran: ${[...new Set(toistuvat)].join(", ")}. Ajoa ei aloitettu`);
+  }
   const sallitut = allowedEvalModels(config);
   const kielletyt = input.models.filter((m) => !sallitut.has(m));
   if (kielletyt.length > 0) {
