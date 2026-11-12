@@ -5,23 +5,57 @@ import { AppConfigSchema, type AppConfig } from "./schema.js";
 
 /**
  * Korvaa merkkijonoissa ${NIMI} ja ${NIMI:-oletus} -viittaukset ympäristömuuttujilla.
- * Oletusarvo voi itse sisältää uuden ${...}-viittauksen, joten korvaus ajetaan
- * sisimmästä ulospäin (RegExp ei osu sisäkkäisiin aaltosulkeisiin, joten silmukka
- * kutistaa lausekkeen kerroksittain).
+ * Oletusarvo voi itse sisältää uuden ${...}-viittauksen (sisäkkäiset oletukset).
+ *
+ * Ympäristömuuttujan arvo lisätään kirjaimellisena: sen sisältöä ei enää jäsennetä.
+ * Aiempi toteutus ajoi korvausta silmukassa, jolloin esim. salasana `p${HOME}x`
+ * muuttui hiljaa ja arvo `a${X}` muuttujassa X jumitti latauksen ikuiseen silmukkaan.
+ * Tunnistamaton tai sulkematon `${` jätetään sellaisenaan.
  */
 export function resolveEnvPlaceholders(input: string, env: NodeJS.ProcessEnv = process.env): string {
-  const pattern = /\$\{([A-Za-z_][A-Za-z0-9_]*)(:-([^{}]*))?\}/g;
-  let previous: string;
-  let current = input;
-  do {
-    previous = current;
-    current = current.replace(pattern, (_match, name: string, _hasDefault: string | undefined, fallback: string | undefined) => {
-      const value = env[name];
-      if (value !== undefined && value !== "") return value;
-      return fallback ?? "";
-    });
-  } while (current !== previous);
-  return current;
+  return expand(input, 0, env, false).text;
+}
+
+const NAME = /^[A-Za-z_][A-Za-z0-9_]*/;
+
+/**
+ * Jäsentää kohdasta `start` alkaen. Kun `inDefault` on tosi, pysähtyy oletusarvon
+ * sulkevaan `}`-merkkiin ja palauttaa sen indeksin `end`-kentässä (-1, jos sulkevaa ei löydy).
+ */
+function expand(input: string, start: number, env: NodeJS.ProcessEnv, inDefault: boolean): { text: string; end: number } {
+  let out = "";
+  let i = start;
+  while (i < input.length) {
+    const ch = input[i];
+    if (inDefault && ch === "}") return { text: out, end: i };
+    if (ch === "$" && input[i + 1] === "{") {
+      const name = NAME.exec(input.slice(i + 2))?.[0];
+      if (name) {
+        const after = i + 2 + name.length;
+        if (input[after] === "}") {
+          out += lookup(env, name) ?? "";
+          i = after + 1;
+          continue;
+        }
+        if (input.startsWith(":-", after)) {
+          const inner = expand(input, after + 2, env, true);
+          if (inner.end !== -1) {
+            out += lookup(env, name) ?? inner.text;
+            i = inner.end + 1;
+            continue;
+          }
+        }
+      }
+    }
+    out += ch;
+    i += 1;
+  }
+  return { text: out, end: inDefault ? -1 : i };
+}
+
+function lookup(env: NodeJS.ProcessEnv, name: string): string | undefined {
+  const value = env[name];
+  return value !== undefined && value !== "" ? value : undefined;
 }
 
 function resolveDeep<T>(value: T, env: NodeJS.ProcessEnv): T {

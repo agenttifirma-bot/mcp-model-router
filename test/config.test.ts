@@ -24,6 +24,30 @@ describe("resolveEnvPlaceholders", () => {
     const result = resolveEnvPlaceholders("ei placeholderia", {});
     expect(result).toBe("ei placeholderia");
   });
+
+  it("lisää muuttujan arvon kirjaimellisena (salasanassa voi olla ${...})", () => {
+    const result = resolveEnvPlaceholders("apiKey: ${PW}", { PW: "p${HOME}x", HOME: "/root" });
+    expect(result).toBe("apiKey: p${HOME}x");
+  });
+
+  it("ei jumiudu, kun muuttujan arvo viittaa muuttujaan itseensä", () => {
+    const result = resolveEnvPlaceholders("${X}", { X: "a${X}" });
+    expect(result).toBe("a${X}");
+  });
+
+  it("oletusarvon sisäinen viittaus käyttää asetettua muuttujaa", () => {
+    expect(resolveEnvPlaceholders("${FOO:-${BAR:-perus}}", { BAR: "bar" })).toBe("bar");
+    expect(resolveEnvPlaceholders("${FOO:-${BAR}}/v1", { FOO: "foo", BAR: "bar" })).toBe("foo/v1");
+  });
+
+  it("tyhjä muuttuja käyttää oletusta, puuttuva ilman oletusta on tyhjä", () => {
+    expect(resolveEnvPlaceholders("[${FOO:-x}][${BAR}]", { FOO: "" })).toBe("[x][]");
+  });
+
+  it("jättää sulkemattoman tai virheellisen viittauksen ennalleen", () => {
+    expect(resolveEnvPlaceholders("${FOO:-abc", { FOO: "f" })).toBe("${FOO:-abc");
+    expect(resolveEnvPlaceholders("${1X} ja $FOO", { FOO: "f" })).toBe("${1X} ja $FOO");
+  });
 });
 
 describe("loadConfig", () => {
