@@ -102,6 +102,31 @@ usage:
     expect(config.tasks.orchestration.timeoutMs).toBe(180_000);
   });
 
+  it.each([
+    ["provider.timeoutMs", "provider:\n  baseUrl: http://localhost:4000\n  timeoutMs: 2147483648\ntasks:\n  general:\n    model: m\n"],
+    ["tasks.<tyyppi>.timeoutMs", "provider:\n  baseUrl: http://localhost:4000\ntasks:\n  general:\n    model: m\n    timeoutMs: 3000000000\n"],
+  ])("hylkää %s:n, joka ylittää setTimeoutin rajan (2^31 - 1 ms)", (_kentta, yaml) => {
+    const path = writeConfig(`${yaml}usage:\n  baseUrl: http://localhost:4000\n`);
+    expect(() => loadConfig({ configPath: path, env: {} })).toThrow(/timeoutMs/);
+  });
+
+  it("hyväksyy timeoutMs:n täsmälleen rajalla 2147483647", () => {
+    const path = writeConfig(`
+provider:
+  baseUrl: http://localhost:4000
+  timeoutMs: 2147483647
+tasks:
+  general:
+    model: m
+    timeoutMs: 2147483647
+usage:
+  baseUrl: http://localhost:4000
+`);
+    const config = loadConfig({ configPath: path, env: {} });
+    expect(config.provider.timeoutMs).toBe(2_147_483_647);
+    expect(config.tasks.general.timeoutMs).toBe(2_147_483_647);
+  });
+
   it("eval.concurrency:n oletusarvo on 4, kun sitä ei ole asetettu", () => {
     const path = writeConfig(`
 provider:
