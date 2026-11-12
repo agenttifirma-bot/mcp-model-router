@@ -72,6 +72,7 @@ jobs:
 
   python-test:
     # Stdlib-only unittest suite (test/test_automerge.py tests tools/automerge.py); no pip install needed.
+    # Matrix starts at 3.10 (oldest supported Python) so syntax newer than 3.10 fails here, not for users.
     runs-on: ubuntu-latest
     strategy:
       matrix:
