@@ -77,4 +77,58 @@ describe("callChatCompletion", () => {
       }),
     ).rejects.toThrow(/500/);
   });
+  it("hylkää setTimeoutin ylittävän timeoutMs:n ennen varausta ja kutsua (ei 1 ms:n ylivuotoa)", async () => {
+    const pool = mockAgent.get("http://litellm.local:4000");
+    pool
+      .intercept({ path: "/chat/completions", method: "POST" })
+      .reply(200, { model: "test-model", choices: [{ message: { content: "ok" } }] })
+      .delay(30);
+    let reserved = 0;
+    const budget = {
+      reserve(tokens: number) {
+        reserved += tokens;
+        return { settle() {} };
+      },
+    };
+
+    await expect(
+      callChatCompletion({
+        baseUrl: "http://litellm.local:4000",
+        budget,
+        timeoutMs: 2 ** 31,
+        model: "test-model",
+        messages: [{ role: "user", content: "Hei" }],
+      }),
+    ).rejects.toThrow(/timeoutMs täytyy olla kokonaisluku väliltä 1-2147483647; kutsua ei tehty/);
+    expect(reserved).toBe(0);
+  });
+
+  it("suurin sallittu timeoutMs (2^31 - 1) odottaa hidasta vastausta eikä aikakatkaise heti", async () => {
+    const pool = mockAgent.get("http://litellm.local:4000");
+    pool
+      .intercept({ path: "/chat/completions", method: "POST" })
+      .reply(200, { model: "test-model", choices: [{ message: { content: "ok" } }] })
+      .delay(30);
+
+    const result = await callChatCompletion({
+      baseUrl: "http://litellm.local:4000",
+      budget: budgetFor(new Db(":memory:")),
+      timeoutMs: 2 ** 31 - 1,
+      model: "test-model",
+      messages: [{ role: "user", content: "Hei" }],
+    });
+    expect(result.text).toBe("ok");
+  });
+
+  it.each([0, -5, 1.5, Number.NaN])("hylkää virheellisen timeoutMs:n %s", async (timeoutMs) => {
+    await expect(
+      callChatCompletion({
+        baseUrl: "http://litellm.local:4000",
+        budget: budgetFor(new Db(":memory:")),
+        timeoutMs,
+        model: "test-model",
+        messages: [{ role: "user", content: "Hei" }],
+      }),
+    ).rejects.toThrow(/timeoutMs täytyy olla/);
+  });
 });
