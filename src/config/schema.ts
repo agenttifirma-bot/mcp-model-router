@@ -81,9 +81,9 @@ export const AppConfigSchema = z.object({
   server: z
     .object({
       name: z.string().default("mcp-model-router"),
-      version: z.string().default("0.1.1"),
+      version: z.string().default("0.1.2"),
     })
-    .default({ name: "mcp-model-router", version: "0.1.1" }),
+    .default({ name: "mcp-model-router", version: "0.1.2" }),
   provider: ProviderConfigSchema,
   tasks: z
     .record(z.string(), ModelRouteSchema)
