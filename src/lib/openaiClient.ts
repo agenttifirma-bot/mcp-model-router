@@ -5,7 +5,7 @@
  */
 
 import { estimateInputTokens, type TokenBudget } from "./budget.js";
-import { EmptyResponseError, LimitExceededError, MAX_TOKENS_PER_CALL } from "./limits.js";
+import { EmptyResponseError, LimitExceededError, MAX_TIMEOUT_MS, MAX_TOKENS_PER_CALL } from "./limits.js";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -53,13 +53,19 @@ export async function callChatCompletion(opts: CallChatCompletionOptions): Promi
     }
   }
   const maxTokens = opts.maxTokens ?? MAX_TOKENS_PER_CALL;
+  // Ennen varausta: virheellinen aikakatkaisu ei saa kuluttaa budjettia.
+  // Liian suuri arvo ylivuotaisi setTimeoutissa 1 ms:iin ja katkaisisi jokaisen kutsun heti.
+  const timeoutMs = opts.timeoutMs ?? 60_000;
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > MAX_TIMEOUT_MS) {
+    throw new Error(`timeoutMs täytyy olla kokonaisluku väliltä 1-${MAX_TIMEOUT_MS}; kutsua ei tehty`);
+  }
 
   // 2) Varaus ENNEN kutsua: syötteen arvio + max_tokens. Epäonnistunut kutsu ei vapauta varausta.
   const reservation = opts.budget.reserve(estimateInputTokens(opts.messages) + maxTokens);
 
   const url = joinUrl(opts.baseUrl, "/chat/completions");
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? 60_000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(url, {
@@ -109,7 +115,7 @@ export async function callChatCompletion(opts: CallChatCompletionOptions): Promi
     return { text, model: json.model ?? opts.model, usage, raw: json };
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(`Mallipyyntö malliin '${opts.model}' aikakatkaistiin (${opts.timeoutMs ?? 60_000} ms)`);
+      throw new Error(`Mallipyyntö malliin '${opts.model}' aikakatkaistiin (${timeoutMs} ms)`);
     }
     throw err;
   } finally {
