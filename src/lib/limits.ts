@@ -13,6 +13,13 @@ export const MAX_CALLS_PER_EVAL_RUN = 200;
 /** Päiväkohtainen tokenibudjetti (varatut + toteutuneet tokenit). */
 export const DAILY_TOKEN_BUDGET = 1_000_000;
 
+/**
+ * Suurin aikakatkaisu (ms), jonka Noden setTimeout hyväksyy (2^31 - 1, noin 24,8 vrk).
+ * Suurempi arvo ei odota pidempään, vaan Node asettaa ajastimen 1 ms:iin, jolloin
+ * jokainen mallikutsu aikakatkaistaan heti.
+ */
+export const MAX_TIMEOUT_MS = 2_147_483_647;
+
 /** Aikavyöhyke, jonka mukaan "päivä" määritellään. Ainoa paikka, jossa päivä määritellään: budgetDay(). */
 export const BUDGET_TIME_ZONE = "Europe/Helsinki";
 
