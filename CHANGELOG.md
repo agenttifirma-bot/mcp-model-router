@@ -18,6 +18,7 @@ All notable changes are recorded in this file. The format follows the
 - README: English section "Quick start from npm" (installation, copying `config.example.yaml` from the package, and starting with `CONFIG_PATH`) (0f1f917, #49).
 
 ### Changed
+- `config.example.yaml` is in English like the README: the comments, the example system prompts (`systemPrompt`) and the judge prompt (also in the README's judge example). The npm quick start copies the file as is, so an English-speaking user previously got Finnish prompts for the models. The configuration values are unchanged (checked by parsing the old and the new file). The new test `test/config-example.test.ts` verifies that the example loads and stays in English (#65).
 - The error for a missing configuration file is in English, gives the absolute path and the fix, and does not print a stack trace. The exit code is still 1 (0f1f917, #49).
 
 ### Fixed
