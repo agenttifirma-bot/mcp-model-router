@@ -8,6 +8,8 @@ All notable changes are recorded in this file. The format follows the
 ### Other
 - CI: Python tests (`python -m unittest discover`) run on Python versions 3.10-3.13 (55602a1, #60). `__pycache__/` and `*.pyc` added to `.gitignore`.
 - CI: the `mcp-doctor` Action updated from version 0.3.0 to version 0.5.0 (b664ebf, #55).
+- README: the `run_eval` model list matches the code: the example configuration shows `eval.allowedModels`, and the text states that each model must be allowed (a `tasks` model or listed in `eval.allowedModels`) (cd99f97, #63).
+- Dev dependencies: vite 8.3.6 (32c033d, #56), vitest 5.1.0 (8aefce2, #57) and undici 7.30.2 (d0284d7, #58).
 - README: the output of the "Try it without a key" example matches the current `list_models` behavior (the `(config.yaml)` heading and a warning line when the `/models` lookup fails). Added an example of a successful lookup and stated the CI `mcp-doctor` version. The commands were run in a clean clone without keys.
 
 ## [0.1.2] - unreleased
