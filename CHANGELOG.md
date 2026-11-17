@@ -8,8 +8,8 @@ Kaikki merkittävät muutokset kirjataan tähän tiedostoon. Muoto noudattaa
 ## [0.1.2] - julkaisupäivä täydennetään
 
 ### Lisätty
-
 - README on käännetty kokonaan englanniksi (sisällysluettelon ankkurit päivitetty) (0dcf6be, #51). Korjattu kaksi koodin vastaista väitettä: Bearer-tunnistus ajetaan ennen JSON-jäsennystä (README väitti päinvastaista), ja mitatun vertailun tulkinta vastaa nyt taulukkoa (`qwen3-coder` oli yleinen-tehtävätyypissä hitaampi ja kalliimpi, muissa tyypeissä nopeampi ja halvempi).
+- `list_models` hakee oikeasti saatavilla olevat mallit palvelimen `/models`-rajapinnasta (LiteLLM tai OpenRouter) eikä lue enää pelkkää `config.yaml`:a. Tulos on välimuistissa (`provider.modelsCacheTtlMs`, oletus 60 s), haulla on aikakatkaisu (`provider.modelsTimeoutMs`, oletus 10 s) ja uusi valinnainen parametri `refresh` ohittaa välimuistin. Jos `config.yaml`:n malli puuttuu palvelimen listalta, rivillä on varoitus. Haun epäonnistuessa näytetään `config.yaml`:n mallit ja näkyvä virhe (vain tyyppi ja HTTP-tila); virhettä ei tallenneta välimuistiin.
 - README: englanninkielinen osio "Quick start from npm" (asennus, `config.example.yaml`:n kopiointi paketista ja käynnistys `CONFIG_PATH`:lla) (0f1f917, #49).
 
 ### Muutettu
