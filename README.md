@@ -85,17 +85,30 @@ cp config.example.yaml config.yaml
   '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_models","arguments":{}}}'; sleep 2) | node dist/index.js
 ```
 
-The text part of the last line's response with `config.example.yaml` (the server's own messages are in Finnish):
+The text part of the last line's response with `config.example.yaml`, when nothing answers at `LLM_BASE_URL` (the server's own messages are in Finnish):
 
 ```
-Tehtävätyypeittäin määritellyt mallit:
+Tehtävätyypeittäin määritellyt mallit (config.yaml):
 - general: openrouter/deepseek/deepseek-v4.1-flash (varamalli: openrouter/qwen/qwen3-flash)
 - code: openrouter/qwen/qwen3-coder (varamalli: openrouter/deepseek/deepseek-v4.1-flash)
 - writing: openrouter/anthropic/claude-3.5-sonnet (varamalli: openrouter/openai/gpt-4o-mini)
 - orchestration: openrouter/openai/gpt-4o (varamalli: openrouter/anthropic/claude-3.5-sonnet)
+
+VAROITUS: mallilistan haku epäonnistui (TypeError). Näytetään vain config.yaml:n mallit; ne voivat olla muuta kuin palvelimella oikeasti saatavilla.
 ```
 
-(In English: "Models defined per task type", with "varamalli" meaning "fallback model".)
+(In English: "Models defined per task type", "varamalli" = "fallback model", and the warning says the `/models` fetch failed, so only the models from `config.yaml` are shown. `TypeError` is the error type of the failed connection; only the type or the HTTP status is shown, never the response body or the address.)
+
+When the server's `/models` endpoint answers, the same call lists the models the server really offers after the task types, and marks task-type models that are missing from the server's list with `[VAROITUS: ...]`:
+
+```
+Saatavilla olevat mallit (litellm /models, 3 kpl):
+- extra-malli
+- openrouter/deepseek/deepseek-v4.1-flash
+- openrouter/qwen/qwen3-coder
+```
+
+(Output from a local stub server that returns three model ids; the 3 listed models are the stub's.)
 
 ## Architecture
 
@@ -652,7 +665,7 @@ python -m unittest discover   # tests for tools/automerge.py (stdlib only)
 
 The Python tools (`tools/`) support Python 3.10-3.13; CI runs the tests on all four.
 
-CI also runs [mcp-doctor](https://github.com/tonyweckstrom1987/mcp-doctor) (MCP handshake, tool schemas and an offline smoke run `test/mcp-doctor/smoke.json`). Locally:
+CI also runs [mcp-doctor](https://github.com/tonyweckstrom1987/mcp-doctor) v0.5.0, pinned by commit in `.github/workflows/ci.yml` (MCP handshake, tool schemas and an offline smoke run `test/mcp-doctor/smoke.json`). Locally:
 
 ```bash
 npm run build
