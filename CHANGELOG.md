@@ -1,45 +1,45 @@
-# Muutosloki
+# Changelog
 
-Kaikki merkittävät muutokset kirjataan tähän tiedostoon. Muoto noudattaa
-[Keep a Changelog](https://keepachangelog.com/fi/1.1.0/) -käytäntöä.
+All notable changes are recorded in this file. The format follows the
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) convention.
 
 ## [Unreleased]
 
-### Muuta
-- CI: Python-testit (`python -m unittest discover`) ajetaan Pythonin versioilla 3.10-3.13 (55602a1, #60). `__pycache__/` ja `*.pyc` lisätty `.gitignore`en.
-- CI: `mcp-doctor`-Action päivitetty versiosta 0.3.0 versioon 0.5.0 (b664ebf, #55).
-- README: "Try it without a key" -esimerkin tuloste vastaa nykyistä `list_models`-toimintaa (otsikko `(config.yaml)` ja varoitusrivi, kun `/models`-haku epäonnistuu), lisätty esimerkki onnistuneesta hausta ja kerrottu CI:n `mcp-doctor`-versio. Komennot ajettu puhtaassa kloonissa ilman avaimia.
+### Other
+- CI: Python tests (`python -m unittest discover`) run on Python versions 3.10-3.13 (55602a1, #60). `__pycache__/` and `*.pyc` added to `.gitignore`.
+- CI: the `mcp-doctor` Action updated from version 0.3.0 to version 0.5.0 (b664ebf, #55).
+- README: the output of the "Try it without a key" example matches the current `list_models` behavior (the `(config.yaml)` heading and a warning line when the `/models` lookup fails). Added an example of a successful lookup and stated the CI `mcp-doctor` version. The commands were run in a clean clone without keys.
 
-## [0.1.2] - julkaisupäivä täydennetään
+## [0.1.2] - unreleased
 
-### Lisätty
-- README on käännetty kokonaan englanniksi (sisällysluettelon ankkurit päivitetty) (0dcf6be, #51). Korjattu kaksi koodin vastaista väitettä: Bearer-tunnistus ajetaan ennen JSON-jäsennystä (README väitti päinvastaista), ja mitatun vertailun tulkinta vastaa nyt taulukkoa (`qwen3-coder` oli yleinen-tehtävätyypissä hitaampi ja kalliimpi, muissa tyypeissä nopeampi ja halvempi).
-- `list_models` hakee oikeasti saatavilla olevat mallit palvelimen `/models`-rajapinnasta (LiteLLM tai OpenRouter) eikä lue enää pelkkää `config.yaml`:a. Tulos on välimuistissa (`provider.modelsCacheTtlMs`, oletus 60 s), haulla on aikakatkaisu (`provider.modelsTimeoutMs`, oletus 10 s) ja uusi valinnainen parametri `refresh` ohittaa välimuistin. Jos `config.yaml`:n malli puuttuu palvelimen listalta, rivillä on varoitus. Haun epäonnistuessa näytetään `config.yaml`:n mallit ja näkyvä virhe (vain tyyppi ja HTTP-tila); virhettä ei tallenneta välimuistiin.
-- README: englanninkielinen osio "Quick start from npm" (asennus, `config.example.yaml`:n kopiointi paketista ja käynnistys `CONFIG_PATH`:lla) (0f1f917, #49).
+### Added
+- The README has been fully translated into English (table of contents anchors updated) (0dcf6be, #51). Fixed two claims that contradicted the code: Bearer authentication runs before JSON parsing (the README claimed the opposite), and the interpretation of the measured comparison now matches the table (`qwen3-coder` was slower and more expensive in the general task type, and faster and cheaper in the other types).
+- `list_models` now fetches the models that are actually available from the server's `/models` endpoint (LiteLLM or OpenRouter) instead of reading only `config.yaml`. The result is cached (`provider.modelsCacheTtlMs`, default 60 s), the lookup has a timeout (`provider.modelsTimeoutMs`, default 10 s), and a new optional parameter `refresh` bypasses the cache. If a model from `config.yaml` is missing from the server's list, the row carries a warning. When the lookup fails, the models from `config.yaml` are shown together with a visible error (only the type and HTTP status); the error is not stored in the cache.
+- README: English section "Quick start from npm" (installation, copying `config.example.yaml` from the package, and starting with `CONFIG_PATH`) (0f1f917, #49).
 
-### Muutettu
-- `config.example.yaml` on englanniksi kuten README: kommentit ja esimerkkien järjestelmäkehotteet (`systemPrompt`) sekä tuomarin kehote (myös README:n tuomariesimerkissä). npm-pikaohje kopioi tiedoston sellaisenaan, joten englanninkielinen käyttäjä sai aiemmin suomenkieliset kehotteet malleille. Asetusarvot ennallaan (tarkistettu jäsentämällä vanha ja uusi tiedosto). Uusi testi `test/config-example.test.ts` varmistaa, että esimerkki latautuu ja pysyy englanninkielisenä.
-- Puuttuvan asetustiedoston virhe on englanniksi, kertoo absoluuttisen polun ja korjauksen eikä tulosta pinojälkeä. Poistumiskoodi on edelleen 1 (0f1f917, #49).
+### Changed
+- `config.example.yaml` is in English like the README: the comments, the example system prompts (`systemPrompt`) and the judge prompt (also in the README's judge example). The npm quick start copies the file as is, so an English-speaking user previously got Finnish prompts for the models. The configuration values are unchanged (checked by parsing the old and the new file). The new test `test/config-example.test.ts` verifies that the example loads and stays in English (#65).
+- The error for a missing configuration file is in English, gives the absolute path and the fix, and does not print a stack trace. The exit code is still 1 (0f1f917, #49).
 
-### Korjattu
-- `provider.timeoutMs` ja `tasks.<tyyppi>.timeoutMs` hyväksyivät minkä tahansa positiivisen kokonaisluvun. Yli 2 147 483 647 ms:n arvolla Noden `setTimeout` asettaa ajastimen 1 ms:iin, joten jokainen mallikutsu aikakatkaistiin heti ja varasi silti päiväbudjettia. Nyt asetuksen lataus hylkää arvon, ja `callChatCompletion` hylkää virheellisen aikakatkaisun ennen budjettivarausta ja kutsua. (2145a9a, #61).
-- Asetustiedoston `${NIMI}`-korvaus lisää ympäristömuuttujan arvon kirjaimellisena. Aiemmin arvo jäsennettiin uudelleen, joten esim. API-avain tai salasana, jossa on `${...}`, muuttui hiljaa, ja arvo `a${X}` muuttujassa `X` jumitti käynnistyksen ikuiseen silmukkaan. (2145a9a, #61).
-- `run_eval` hylkää saman mallin listalla kahdesti ennen tiedoston lukua ja kutsuja (aiemmin jokainen kutsu tehtiin kahdesti ja yhteenvedossa oli kaksi samaa riviä). Prompt-tiedosto, jossa sama `id` toistuu, hylätään validoinnissa, koska yhteenvedot tunnistavat tapaukset id:n perusteella. (2145a9a, #61).
-- HTTP-tila: Bearer-tunnistus ajetaan ennen JSON-jäsennystä. Tunnistamattoman pyynnön bodya ei enää lueta, joten virheellinen JSON tai liian suuri body antaa 401:n eikä Expressin HTML-virhesivua pinojälkineen. Tunnistetun pyynnön jäsennysvirhe palauttaa JSON-RPC-virheen `-32700 Parse error` (katselmointi 28.10., löydös 9). DNS rebinding -suoja (Host-otsakkeen tarkistus) toimii kuten ennen. (5dd6e7d, #42).
-- HTTP-tila: pyyntökohtainen `McpServer` ja transport suljetaan nyt myös, kun `connect` tai `handleRequest` heittää tai yhteys sulkeutuu kesken käsittelyn; aiemmin ne jäivät auki (löydös 8). (5dd6e7d, #42).
-- `run_eval`: LLM-tuomarin pisteiden poiminta ei enää lue ensimmäistä numeroa 1-5 mistä tahansa tekstistä. Vastaukset kuten "10/10" tai "vuonna 2024" eivät enää anna pisteitä 1 tai 2; epäselvä vastaus jättää pisteen pois sen sijaan, että vääristäisi keskiarvoa (katselmointi 28.10., löydös 10). (d2e1d2b, #41).
-- `run_eval`: tuomarikutsun virheet (myös `LimitExceededError`) eivät enää katoa hiljaa. Tapauskohtainen `judgeError` ja mallikohtainen `judgeErrorCount` kertovat, miksi piste puuttuu. (d2e1d2b, #41).
-- `run_eval`: tuomarikutsu varaa oletuksena 64 tokenia 4096:n sijaan (uusi valinnainen `eval.judge.maxTokens`, enintään kutsukohtainen katto 4096). (d2e1d2b, #41).
-- `run_eval` sallii vain `tasks`-osion mallit (`model`, `fallbackModel`) ja valinnaisen `eval.allowedModels`-listan. Aiemmin `models` hyväksyi minkä tahansa tunnisteen, jolloin tokenin haltija pystyi ohjaamaan kutsut proxyn kalleimpaan malliin. Tarkistus tehdään ennen tiedostojen lukua, kirjauksia ja kutsuja (katselmointi 28.10., löydös 3; 97ab7ab, #39).
-- `get_usage`: kulutusrajapinnan kutsulla on nyt aikakatkaisu (oletus 15 s, asetus `usage.timeoutMs`). Aiemmin roikkuva kutsu odotti rajattomasti ja piti HTTP-tilassa oman palvelininstanssinsa hengissä (katselmointi 28.10., löydös 5; bb139a7, #38; 27eebf9, #40 on samansisältöinen kaksoiskommitti).
-- Kirjausvirhe (esim. `SQLITE_READONLY`) ei enää laukaise varamallia eikä kaada `run_evalia`. Virhe kirjataan stderriin ja mallikutsun tulos säilyy (katselmointi 28.10., löydökset 1 ja 4; 6d2befa, #37).
-- HTTP-tila: `listen`-virhe (esim. `EADDRINUSE`) tunnistetaan, kirjataan koodina ja palvelu päättyy koodilla 1. Aiemmin Express 5:n virheellinen takaisinkutsu tulkittiin onnistuneeksi käynnistykseksi (b616de3, #52).
-- `route_and_complete` hyväksyy vain asetustiedoston omat tehtävätyypit; periytyneet avaimet (`constructor`, `toString`, `__proto__`) hylätään (b616de3, #52).
+### Fixed
+- `provider.timeoutMs` and `tasks.<type>.timeoutMs` accepted any positive integer. With a value above 2,147,483,647 ms, Node's `setTimeout` sets the timer to 1 ms, so every model call timed out immediately and still reserved daily budget. Now loading the configuration rejects the value, and `callChatCompletion` rejects an invalid timeout before the budget reservation and the call. (2145a9a, #61).
+- The `${NAME}` substitution in the configuration file inserts the value of the environment variable literally. Previously the value was parsed again, so for example an API key or password containing `${...}` was silently changed, and the value `a${X}` in variable `X` hung the startup in an infinite loop. (2145a9a, #61).
+- `run_eval` rejects the same model appearing twice in the list before reading the file and making calls (previously every call was made twice and the summary had two identical rows). A prompt file in which the same `id` repeats is rejected in validation, because the summaries identify cases by `id`. (2145a9a, #61).
+- HTTP mode: Bearer authentication runs before JSON parsing. The body of an unauthenticated request is no longer read, so invalid JSON or a too large body gives a 401 instead of Express's HTML error page with a stack trace. A parse error in an authenticated request returns the JSON-RPC error `-32700 Parse error` (review of 28 Oct, finding 9). DNS rebinding protection (the Host header check) works as before. (5dd6e7d, #42).
+- HTTP mode: the per-request `McpServer` and transport are now closed also when `connect` or `handleRequest` throws or the connection closes in the middle of handling; previously they were left open (finding 8). (5dd6e7d, #42).
+- `run_eval`: extracting the LLM judge's score no longer reads the first number 1-5 from any text. Answers such as "10/10" or "in 2024" no longer give a score of 1 or 2; an unclear answer leaves the score out instead of distorting the average (review of 28 Oct, finding 10). (d2e1d2b, #41).
+- `run_eval`: errors from the judge call (including `LimitExceededError`) no longer disappear silently. The per-case `judgeError` and the per-model `judgeErrorCount` tell why a score is missing. (d2e1d2b, #41).
+- `run_eval`: the judge call reserves 64 tokens by default instead of 4096 (new optional `eval.judge.maxTokens`, at most the per-call cap of 4096). (d2e1d2b, #41).
+- `run_eval` allows only the models of the `tasks` section (`model`, `fallbackModel`) and the optional `eval.allowedModels` list. Previously `models` accepted any identifier, so a token holder could steer calls to the proxy's most expensive model. The check is made before reading files, logging and calls (review of 28 Oct, finding 3; 97ab7ab, #39).
+- `get_usage`: the call to the usage endpoint now has a timeout (default 15 s, setting `usage.timeoutMs`). Previously a hanging call waited without limit and kept its own server instance alive in HTTP mode (review of 28 Oct, finding 5; bb139a7, #38; 27eebf9, #40 is a duplicate commit with the same content).
+- A logging error (e.g. `SQLITE_READONLY`) no longer triggers the fallback model or crashes `run_eval`. The error is logged to stderr and the result of the model call is preserved (review of 28 Oct, findings 1 and 4; 6d2befa, #37).
+- HTTP mode: a `listen` error (e.g. `EADDRINUSE`) is recognized, logged as a code, and the service exits with code 1. Previously Express 5's faulty callback was interpreted as a successful start (b616de3, #52).
+- `route_and_complete` accepts only the task types of the configuration file itself; inherited keys (`constructor`, `toString`, `__proto__`) are rejected (b616de3, #52).
 
-### Muuta
-- CI: `mcp-doctor`-terveystarkastus ja verkoton savuajo; esimerkkiasetuksen palvelinversio korjattu vastaamaan pakettia (e2aed26, #36).
-- Automerge päivitetty versioon 2: yhdistää vain tarkastajan hyväksymät, rajaamattomat PR:t (32a6eee, #48). Dependabotin automerge koskee vain patch- ja minor-päivityksiä (ef8dfca, #32).
-- Testit: automerge-testit (a4347cd, #33), budjettitestit (62a919b, #43) ja tyhjä `test/__init__.py`, jotta repon omat testit voittavat samannimisen testipaketin (584807d, #53).
-- README-päivitykset (27e6a8e, #35; b3d0f67, #47).
-- Riippuvuudet: express ja `@types/express` (e359ea4, #16), `@types/node` 26.6.5 ja 26.6.6 (61c3eb4, #10; 1a587ef, #45), vitest 5.0.5 (49b5107, #25), js-yaml 5.5.0 (87d4f26, #27), vite 8.3.5 (ed5edd0, #34), MCP SDK 1.32.2 (27081f7, #46) ja evalkit-action (9ac4b39, #24).
-- Palvelimen oletusversio (`server.version`) ja `config.example.yaml` nostettu versioon 0.1.2.
+### Other
+- CI: `mcp-doctor` health check and an offline smoke run; the example configuration's server version fixed to match the package (e2aed26, #36).
+- Automerge updated to version 2: it merges only unrestricted PRs approved by the reviewer (32a6eee, #48). Dependabot's automerge applies only to patch and minor updates (ef8dfca, #32).
+- Tests: automerge tests (a4347cd, #33), budget tests (62a919b, #43) and an empty `test/__init__.py` so that the repository's own tests win over a test package with the same name (584807d, #53).
+- README updates (27e6a8e, #35; b3d0f67, #47).
+- Dependencies: express and `@types/express` (e359ea4, #16), `@types/node` 26.6.5 and 26.6.6 (61c3eb4, #10; 1a587ef, #45), vitest 5.0.5 (49b5107, #25), js-yaml 5.5.0 (87d4f26, #27), vite 8.3.5 (ed5edd0, #34), MCP SDK 1.32.2 (27081f7, #46) and evalkit-action (9ac4b39, #24).
+- The server's default version (`server.version`) and `config.example.yaml` raised to version 0.1.2.
