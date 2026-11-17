@@ -5,6 +5,11 @@ Kaikki merkittävät muutokset kirjataan tähän tiedostoon. Muoto noudattaa
 
 ## [Unreleased]
 
+### Muuta
+- CI: Python-testit (`python -m unittest discover`) ajetaan Pythonin versioilla 3.10-3.13 (55602a1, #60). `__pycache__/` ja `*.pyc` lisätty `.gitignore`en.
+- CI: `mcp-doctor`-Action päivitetty versiosta 0.3.0 versioon 0.5.0 (b664ebf, #55).
+- README: "Try it without a key" -esimerkin tuloste vastaa nykyistä `list_models`-toimintaa (otsikko `(config.yaml)` ja varoitusrivi, kun `/models`-haku epäonnistuu), lisätty esimerkki onnistuneesta hausta ja kerrottu CI:n `mcp-doctor`-versio. Komennot ajettu puhtaassa kloonissa ilman avaimia.
+
 ## [0.1.2] - julkaisupäivä täydennetään
 
 ### Lisätty
