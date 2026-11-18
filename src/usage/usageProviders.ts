@@ -26,7 +26,7 @@ async function getJson(url: string, config: UsageConfig, nimi: string): Promise<
     const res = await fetch(url, { headers: authHeaders(config.apiKey), signal: AbortSignal.timeout(ms) });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      throw new Error(`${nimi}-kulutustietojen haku epäonnistui (${res.status} ${res.statusText}): ${body.slice(0, 300)}`);
+      throw new Error(`fetching ${nimi} usage data failed (${res.status} ${res.statusText}): ${body.slice(0, 300)}`);
     }
     return await res.json();
   } catch (err) {

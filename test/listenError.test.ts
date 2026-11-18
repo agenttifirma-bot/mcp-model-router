@@ -21,7 +21,7 @@ describe("HTTP-palvelimen käynnistysvirhe", () => {
       const out = `${res.stdout}${res.stderr}`;
       expect(res.status).toBe(1);
       expect(out).not.toMatch(/kuuntelee osoitteessa/);
-      expect(out).toMatch(/käynnistys epäonnistui \(EADDRINUSE\)/);
+      expect(out).toMatch(/failed to start HTTP server \(EADDRINUSE\)/);
     } finally {
       await new Promise<void>((r) => blocker.close(() => r()));
     }

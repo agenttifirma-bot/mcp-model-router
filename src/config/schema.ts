@@ -19,7 +19,7 @@ export type ModelRoute = z.infer<typeof ModelRouteSchema>;
 
 export const ProviderConfigSchema = z.object({
   // OpenAI-yhteensopiva base URL, esim. LiteLLM-proxy tai OpenRouterin /api/v1
-  baseUrl: z.string().url("provider.baseUrl täytyy olla kelvollinen URL"),
+  baseUrl: z.string().url("provider.baseUrl must be a valid URL"),
   apiKey: z.string().optional().default(""),
   timeoutMs: z.number().int().positive().max(MAX_TIMEOUT_MS).default(60_000),
   // Vaikuttaa siihen, karsitaanko "openrouter/"-etuliite mallitunnisteesta
@@ -34,7 +34,7 @@ export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 export const UsageConfigSchema = z.object({
   // Kumman rajapintamuotoa /get_usage lukee
   provider: z.enum(["litellm", "openrouter"]).default("litellm"),
-  baseUrl: z.string().url("usage.baseUrl täytyy olla kelvollinen URL"),
+  baseUrl: z.string().url("usage.baseUrl must be a valid URL"),
   apiKey: z.string().optional().default(""),
   // Kulutusrajapinnan aikakatkaisu (ms). Ilman sitä roikkuva rajapinta piti get_usage-kutsun auki rajattomasti.
   timeoutMs: z.number().int().positive().max(120_000).optional(),
@@ -91,7 +91,7 @@ export const AppConfigSchema = z.object({
   tasks: z
     .record(z.string(), ModelRouteSchema)
     .refine((tasks) => Object.keys(tasks).length > 0, {
-      message: "config.yaml: kohdassa 'tasks' täytyy olla vähintään yksi tehtävätyyppi",
+      message: "config.yaml: 'tasks' must contain at least one task type",
     }),
   usage: UsageConfigSchema,
   eval: EvalConfigSchema.prefault({ judge: { enabled: false }, pricing: {} }),

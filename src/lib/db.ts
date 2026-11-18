@@ -172,7 +172,7 @@ export class Db {
         | undefined;
       const current = row?.reserved ?? 0;
       if (!Number.isFinite(tokens) || tokens < 0 || current + tokens > limit) {
-        throw new LimitExceededError("Päiväkohtainen tokenibudjetti ylittyisi; kutsua ei tehty");
+        throw new LimitExceededError("Daily token budget would be exceeded; no call made");
       }
       this.db
         .prepare(
