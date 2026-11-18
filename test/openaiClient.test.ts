@@ -99,7 +99,7 @@ describe("callChatCompletion", () => {
         model: "test-model",
         messages: [{ role: "user", content: "Hei" }],
       }),
-    ).rejects.toThrow(/timeoutMs täytyy olla kokonaisluku väliltä 1-2147483647; kutsua ei tehty/);
+    ).rejects.toThrow(/timeoutMs must be an integer between 1 and 2147483647; no call made/);
     expect(reserved).toBe(0);
   });
 
@@ -129,6 +129,6 @@ describe("callChatCompletion", () => {
         model: "test-model",
         messages: [{ role: "user", content: "Hei" }],
       }),
-    ).rejects.toThrow(/timeoutMs täytyy olla/);
+    ).rejects.toThrow(/timeoutMs must be an integer/);
   });
 });

@@ -62,7 +62,7 @@ describe("kirjausvirhe ei muuta mallikutsun tulosta (katselmointi 28.10., löyd�
     expect(r.modelUsed).toBe("primary-model");
     expect(r.text).toBe("vastaus");
     expect(kutsuja).toBe(1);
-    expect(stderr).toHaveBeenCalledWith(expect.stringContaining("kutsulokin kirjaus epäonnistui (Error): SQLITE_READONLY"));
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining("call log write failed (Error): SQLITE_READONLY"));
   });
 
   it("apufunktiot eivät heitä eivätkä kirjoita stdoutiin", () => {
@@ -79,7 +79,7 @@ describe("kirjausvirhe ei muuta mallikutsun tulosta (katselmointi 28.10., löyd�
         }),
       ).not.toThrow();
       expect(stdout).not.toHaveBeenCalled();
-      expect(stderr).toHaveBeenCalledWith(expect.stringContaining("eval-tuloksen kirjaus epäonnistui"));
+      expect(stderr).toHaveBeenCalledWith(expect.stringContaining("eval result write failed"));
     } finally {
       stdout.mockRestore();
     }

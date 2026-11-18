@@ -37,7 +37,7 @@ export const EMPTY_RESPONSE_CODE = "vastaus_tyhja";
 export class EmptyResponseError extends Error {
   readonly code = EMPTY_RESPONSE_CODE;
   constructor(model: string) {
-    super(`${EMPTY_RESPONSE_CODE}: malli '${model}' palautti tyhjän vastauksen`);
+    super(`${EMPTY_RESPONSE_CODE}: model '${model}' returned an empty response`);
     this.name = "EmptyResponseError";
   }
 }

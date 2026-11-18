@@ -10,7 +10,7 @@ export const MIN_AUTH_TOKEN_LENGTH = 32;
  */
 export function assertValidAuthToken(token: string | undefined): string {
   if (token === undefined || token.length < MIN_AUTH_TOKEN_LENGTH) {
-    throw new Error(`MCP_AUTH_TOKEN puuttuu tai on alle ${MIN_AUTH_TOKEN_LENGTH} merkkiä; HTTP-tila ei käynnisty ilman sitä`);
+    throw new Error(`MCP_AUTH_TOKEN is missing or shorter than ${MIN_AUTH_TOKEN_LENGTH} characters; HTTP mode will not start without it`);
   }
   return token;
 }

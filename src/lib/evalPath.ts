@@ -8,7 +8,7 @@ const ALLOWED_EXTENSIONS = new Set([".json"]);
  * Virheilmoitus on tarkoituksella kiinteä: se ei kerro kutsujalle polkua,
  * hakemiston sijaintia eikä sitä, mikä tarkistus hylkäsi polun.
  */
-export const EVAL_PATH_REJECTED = "promptSetPath hylätty: tiedostoa ei sallita";
+export const EVAL_PATH_REJECTED = "promptSetPath rejected: file not allowed";
 
 export function getEvalDirFromEnv(): string | undefined {
   const value = process.env.EVAL_DIR;

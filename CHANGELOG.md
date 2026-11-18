@@ -5,6 +5,9 @@ All notable changes are recorded in this file. The format follows the
 
 ## [Unreleased]
 
+### Changed
+- User-visible error messages and stderr lines (config, eval, routing, model client, HTTP transport, usage and log warnings) are now in English instead of Finnish.
+
 ### Other
 - CI: Python tests (`python -m unittest discover`) run on Python versions 3.10-3.13 (55602a1, #60). `__pycache__/` and `*.pyc` added to `.gitignore`.
 - CI: the `mcp-doctor` Action updated from version 0.3.0 to version 0.5.0 (b664ebf, #55).

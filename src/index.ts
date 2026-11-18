@@ -19,7 +19,7 @@ async function main(): Promise<void> {
     const server = createServer(config, db);
     await startStdioTransport(server);
   } else {
-    throw new Error(`Tuntematon MCP_TRANSPORT-arvo '${transportKind}'. Käytä 'stdio' tai 'http'.`);
+    throw new Error(`Unknown MCP_TRANSPORT value '${transportKind}'. Use 'stdio' or 'http'.`);
   }
 }
 
@@ -29,6 +29,6 @@ main().catch((err) => {
     process.exitCode = 1;
     return;
   }
-  console.error("mcp-model-router käynnistys epäonnistui:", err);
+  console.error("mcp-model-router failed to start:", err);
   process.exitCode = 1;
 });

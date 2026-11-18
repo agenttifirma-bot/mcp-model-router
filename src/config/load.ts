@@ -109,7 +109,7 @@ export function loadConfig(options: LoadConfigOptions = {}): AppConfig {
     const issues = result.error.issues
       .map((issue) => `  - ${issue.path.join(".") || "(juuri)"}: ${issue.message}`)
       .join("\n");
-    throw new Error(`Asetustiedosto '${configPath}' ei kelpaa:\n${issues}`);
+    throw new Error(`Config file '${configPath}' is invalid:\n${issues}`);
   }
   return result.data;
 }

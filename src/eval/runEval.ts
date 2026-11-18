@@ -20,14 +20,14 @@ export type EvalPromptCase = z.infer<typeof EvalPromptCaseSchema>;
 
 const EvalPromptSetSchema = z
   .array(EvalPromptCaseSchema)
-  .min(1, "prompt-tiedostossa täytyy olla vähintään yksi tehtävä")
+  .min(1, "the prompt file must contain at least one task")
   .superRefine((cases, ctx) => {
     // Yhteenvedot ja expectedContains-haku tunnistavat tapauksen id:n perusteella,
     // joten toistuva id sekoittaisi läpäisyprosentit hiljaa.
     const seen = new Set<string>();
     cases.forEach((c, index) => {
       if (seen.has(c.id)) {
-        ctx.addIssue({ code: "custom", path: [index, "id"], message: `id '${c.id}' toistuu; jokaisen tehtävän id:n täytyy olla yksilöllinen` });
+        ctx.addIssue({ code: "custom", path: [index, "id"], message: `id '${c.id}' is duplicated; each task id must be unique` });
       }
       seen.add(c.id);
     });
@@ -39,12 +39,12 @@ export function loadPromptSet(path: string): EvalPromptCase[] {
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    throw new Error(`Prompt-tiedosto '${path}' ei ole kelvollista JSON:ia: ${err instanceof Error ? err.message : String(err)}`);
+    throw new Error(`Prompt file '${path}' is not valid JSON: ${err instanceof Error ? err.message : String(err)}`);
   }
   const result = EvalPromptSetSchema.safeParse(parsed);
   if (!result.success) {
     const issues = result.error.issues.map((i) => `  - ${i.path.join(".") || "(juuri)"}: ${i.message}`).join("\n");
-    throw new Error(`Prompt-tiedosto '${path}' ei kelpaa:\n${issues}`);
+    throw new Error(`Prompt file '${path}' is invalid:\n${issues}`);
   }
   return result.data;
 }
@@ -187,7 +187,7 @@ export interface JudgeOutcome {
 
 async function judgeResponse(config: AppConfig, testCase: EvalPromptCase, responseText: string, budget: TokenBudget): Promise<JudgeOutcome> {
   const judgeModel = config.eval.judge.model;
-  if (!judgeModel) return { score: null, error: "eval.judge.model puuttuu konfiguraatiosta" };
+  if (!judgeModel) return { score: null, error: "eval.judge.model is missing from the configuration" };
   const system =
     config.eval.judge.systemPrompt ??
     "Olet tiukka arvioija. Arvioi vastauksen laatu asteikolla 1-5 ja vastaa PELKÄLLÄ numerolla.";
@@ -215,7 +215,7 @@ async function judgeResponse(config: AppConfig, testCase: EvalPromptCase, respon
     });
     const score = parseJudgeScore(result.text);
     if (score === null) {
-      return { score: null, error: `tuomarin vastauksesta ei saatu yksiselitteistä pistettä 1-5: ${JSON.stringify(result.text.slice(0, 80))}` };
+      return { score: null, error: `judge response did not contain an unambiguous score from 1 to 5: ${JSON.stringify(result.text.slice(0, 80))}` };
     }
     return { score, error: null };
   } catch (err) {
@@ -332,13 +332,13 @@ export async function runEval(
   // Sama malli kahdesti tuplaisi kutsut (ja kulut) sekä yhteenvetorivit.
   const toistuvat = input.models.filter((m, i) => input.models.indexOf(m) !== i);
   if (toistuvat.length > 0) {
-    throw new Error(`run_eval: sama malli on listalla useammin kuin kerran: ${[...new Set(toistuvat)].join(", ")}. Ajoa ei aloitettu`);
+    throw new Error(`run_eval: the same model appears more than once in the list: ${[...new Set(toistuvat)].join(", ")}. Run not started`);
   }
   const sallitut = allowedEvalModels(config);
   const kielletyt = input.models.filter((m) => !sallitut.has(m));
   if (kielletyt.length > 0) {
     throw new LimitExceededError(
-      `run_eval: mallit eivät ole sallittuja: ${kielletyt.join(", ")}. Sallitut: tasks-osion mallit ja eval.allowedModels (config.yaml). Ajoa ei aloitettu`,
+      `run_eval: models not allowed: ${kielletyt.join(", ")}. Allowed: models in the tasks section and eval.allowedModels (config.yaml). Run not started`,
     );
   }
 
@@ -352,7 +352,7 @@ export async function runEval(
   const plannedCalls = input.models.length * cases.length * (judgeUsed ? 2 : 1);
   if (plannedCalls > MAX_CALLS_PER_EVAL_RUN) {
     throw new LimitExceededError(
-      `run_eval tekisi ${plannedCalls} mallikutsua; yhdessä ajossa sallitaan enintään ${MAX_CALLS_PER_EVAL_RUN}. Ajoa ei aloitettu`,
+      `run_eval would make ${plannedCalls} model calls; at most ${MAX_CALLS_PER_EVAL_RUN} are allowed per run. Run not started`,
     );
   }
   const budget = budgetFor(db);

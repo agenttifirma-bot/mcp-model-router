@@ -260,7 +260,7 @@ describe("run_eval: sallitut mallit (katselmointi 28.10., löydös 3)", () => {
     };
     await expect(
       runEval(config, { promptSetPath: "/ei/ole/olemassa.json", models: ["m1", "kallis-malli"] }, undefined, { evalDir: "/tmp" }),
-    ).rejects.toThrow(/eivät ole sallittuja: kallis-malli/);
+    ).rejects.toThrow(/models not allowed: kallis-malli/);
   });
 
   it("sallii tasks-osion päämallin, varamallin ja eval.allowedModels-listan mallit", async () => {
@@ -287,7 +287,7 @@ describe("run_eval: toistuvat mallit ja tapaus-id:t", () => {
     const db = new Db(":memory:");
     await expect(
       runEval(config, { promptSetPath: "/ei/ole/olemassa.json", models: ["m1", "m1"], runId: "toisto" }, db, { evalDir: "/tmp" }),
-    ).rejects.toThrow(/useammin kuin kerran: m1\. Ajoa ei aloitettu/);
+    ).rejects.toThrow(/more than once in the list: m1\. Run not started/);
     expect(db.getEvalRunResults("toisto")).toEqual([]);
   });
 
@@ -304,7 +304,7 @@ describe("run_eval: toistuvat mallit ja tapaus-id:t", () => {
         ]),
         "utf8",
       );
-      expect(() => loadPromptSet(path)).toThrow(/1\.id: id 'yleinen-01' toistuu/);
+      expect(() => loadPromptSet(path)).toThrow(/1\.id: id 'yleinen-01' is duplicated/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
