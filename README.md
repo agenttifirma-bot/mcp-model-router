@@ -6,7 +6,7 @@
 
 **Technologies:** TypeScript, Node.js 22/24, Model Context Protocol (stdio and streamable HTTP), SQLite, vitest. License: [LICENSE](./LICENSE).
 
-**Contents:** [Quick start from npm](#quick-start-from-npm) · [Quick start from source](#quick-start-from-source) · [Try it without a key](#try-it-without-an-llm-key) · [Architecture](#architecture) · [Installation](#installation) · [MCP tools](#mcp-tools) · [Measured comparison](#example-measured-comparison) · [Claude Desktop / Cursor](#claude-desktop--cursor-configuration) · [Proxmox LXC](#running-in-a-proxmox-lxc) · [Security](#security) · [Known limitations](#known-limitations)
+**Contents:** [Try it in a minute](#try-it-in-a-minute) · [Quick start from npm](#quick-start-from-npm) · [Quick start from source](#quick-start-from-source) · [Try it without a key](#try-it-without-an-llm-key) · [Architecture](#architecture) · [Installation](#installation) · [MCP tools](#mcp-tools) · [Measured comparison](#example-measured-comparison) · [Claude Desktop / Cursor](#claude-desktop--cursor-configuration) · [Proxmox LXC](#running-in-a-proxmox-lxc) · [Security](#security) · [Known limitations](#known-limitations)
 
 An MCP server that **complements LiteLLM and does not replace it**. LiteLLM and
 OpenRouter already handle per-agent keys and spending caps; this server does not
@@ -27,6 +27,41 @@ rebuild them. It does three things:
 
 SQLite is used **only** for call logs and eval results - not for usage or
 budget bookkeeping.
+
+## Try it in a minute
+
+See the routing work end to end without an API key. The demo starts a local fake OpenAI-compatible provider on `127.0.0.1`, launches the router as a real MCP server over stdio, connects to it with the MCP SDK client and sends one `route_and_complete` call per task type:
+
+```bash
+git clone https://github.com/tonyweckstrom1987/mcp-model-router.git
+cd mcp-model-router
+npm ci && npm run build
+npm run example
+```
+
+Output:
+
+```
+Connected to mcp-model-router over stdio. Tools: route_and_complete, list_models, get_usage, run_eval
+
+Routing (rules from examples/routing-demo/demo-config.yaml):
+
+  general        demo/fast-cheap
+                 [demo/fast-cheap] fake answer to: What is the capital of Finland?
+
+  code           demo/coder
+                 [demo/coder] fake answer to: Write a function that reverses a string.
+
+  writing        demo/writer
+                 [demo/writer] fake answer to: Summarise the README in one sentence.
+
+  orchestration  demo/planner-unavailable -> demo/fast-cheap  (primary failed, fallback used)
+                 [demo/fast-cheap] fake answer to: Split 'ship v1.0' into three steps.
+
+All answers came from a local fake provider: no API key, no cost.
+```
+
+The routing rules are in [`examples/routing-demo/demo-config.yaml`](./examples/routing-demo/demo-config.yaml): each task type names a model and an optional fallback. The fake provider ([`fake-provider.mjs`](./examples/routing-demo/fake-provider.mjs)) answers HTTP 503 for the `orchestration` primary model, so the last line shows the fallback taking over. Edit the config and run `npm run example` again to see the routing change. `npm test` runs the same demo as an end-to-end test (`test/example.e2e.test.ts`), so CI catches it if the example breaks.
 
 ## Quick start from npm
 
