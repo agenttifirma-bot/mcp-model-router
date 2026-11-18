@@ -15,6 +15,12 @@ export interface HttpTransportOptions {
   allowedHosts?: string[];
   /** Pakollinen Bearer-token /mcp-päätepisteelle (vähintään 32 merkkiä). Ilman sitä palvelin ei käynnisty. */
   authToken: string | undefined;
+  /**
+   * Kutsutaan, jos kuunteluun ryhtyminen epäonnistuu (esim. EADDRINUSE).
+   * Oletus: kirjataan vain virheen koodi tai tyyppi ja lopetetaan koodilla 1,
+   * jotta systemd käynnistää palvelun uudelleen.
+   */
+  onListenError?: (err: Error) => void;
 }
 
 /**
@@ -69,11 +75,11 @@ export function startHttpTransport(createServer: () => McpServer, options: HttpT
       await transport.handleRequest(req, res, req.body);
     } catch (err) {
       cleanup();
-      console.error("MCP-pyynnön käsittely epäonnistui:", err);
+      console.error("MCP request handling failed:", err);
       if (!res.headersSent) {
         res.status(500).json({
           jsonrpc: "2.0",
-          error: { code: -32603, message: "Sisäinen palvelinvirhe" },
+          error: { code: -32603, message: "Internal server error" },
           id: null,
         });
       }
@@ -83,7 +89,7 @@ export function startHttpTransport(createServer: () => McpServer, options: HttpT
   const methodNotAllowed = (_req: unknown, res: Response) => {
     res.status(405).json({
       jsonrpc: "2.0",
-      error: { code: -32000, message: "Metodi ei ole tuettu tilattomassa tilassa." },
+      error: { code: -32000, message: "Method not supported in stateless mode." },
       id: null,
     });
   };
@@ -106,11 +112,25 @@ export function startHttpTransport(createServer: () => McpServer, options: HttpT
       res.status(status).json({ jsonrpc: "2.0", error: { code: -32600, message: "Invalid Request" }, id: null });
       return;
     }
-    console.error("HTTP-pyynnön käsittely epäonnistui:", err);
-    res.status(500).json({ jsonrpc: "2.0", error: { code: -32603, message: "Sisäinen palvelinvirhe" }, id: null });
+    console.error("HTTP request handling failed:", err);
+    res.status(500).json({ jsonrpc: "2.0", error: { code: -32603, message: "Internal server error" }, id: null });
   });
 
-  return app.listen(options.port, options.host, () => {
+  // Express 5 rekisteröi listen-callbackin myös 'error'-tapahtumaan
+  // (node_modules/express/lib/application.js: server.once('error', done)),
+  // joten callback saa virheen argumenttina eikä sitä saa käsitellä onnistumisena.
+  return app.listen(options.port, options.host, (err?: Error) => {
+    if (err) {
+      const handler =
+        options.onListenError ??
+        ((e: Error) => {
+          const code = (e as NodeJS.ErrnoException).code ?? e.name;
+          console.error(`mcp-model-router: failed to start HTTP server (${code})`);
+          process.exit(1);
+        });
+      handler(err);
+      return;
+    }
     console.error(`mcp-model-router: streamable HTTP kuuntelee osoitteessa http://${options.host}:${options.port}/mcp`);
   });
 }

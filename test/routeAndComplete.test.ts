@@ -70,9 +70,19 @@ describe("routeAndComplete", () => {
 
   it("heittää virheen tuntemattomasta tehtävätyypistä", async () => {
     await expect(routeAndComplete(baseConfig(), { taskType: "ei-olemassa", prompt: "moi" })).rejects.toThrow(
-      /Tuntematon tehtävätyyppi/,
+      /Unknown task type/,
     );
   });
+
+  it.each(["constructor", "toString", "__proto__", "hasOwnProperty"])(
+    "hylkää periytyvän avaimen '%s' tehtävätyyppinä ennen mallikutsua",
+    async (taskType) => {
+      // disableNetConnect + ei interceptoreita: mallikutsu epäonnistuisi eri virheeseen.
+      await expect(routeAndComplete(baseConfig(), { taskType, prompt: "moi" })).rejects.toThrow(
+        /Unknown task type/,
+      );
+    },
+  );
 
   it("karsii openrouter/-etuliitteen mallitunnisteesta kun provider.kind on openrouter", async () => {
     const config = baseConfig();
@@ -104,7 +114,7 @@ describe("routeAndComplete", () => {
       .reply(200, { model: "primary-model", choices: [{ message: { content: "liian myöhään" } }] })
       .delay(200);
 
-    await expect(routeAndComplete(config, { taskType: "general", prompt: "moi" })).rejects.toThrow(/aikakatkaistiin \(20 ms\)/);
+    await expect(routeAndComplete(config, { taskType: "general", prompt: "moi" })).rejects.toThrow(/timed out \(20 ms\)/);
   });
 
   it("käyttää provider.timeoutMs:ää kun tehtävätyypillä ei ole omaa timeoutMs:ää", async () => {
@@ -118,7 +128,7 @@ describe("routeAndComplete", () => {
       .reply(200, { model: "primary-model", choices: [{ message: { content: "liian myöhään" } }] })
       .delay(200);
 
-    await expect(routeAndComplete(config, { taskType: "general", prompt: "moi" })).rejects.toThrow(/aikakatkaistiin \(20 ms\)/);
+    await expect(routeAndComplete(config, { taskType: "general", prompt: "moi" })).rejects.toThrow(/timed out \(20 ms\)/);
   });
 
   it("kirjoittaa kutsulokin oikeaan tietokantaan", async () => {

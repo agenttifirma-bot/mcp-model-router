@@ -35,10 +35,11 @@ export async function routeAndComplete(
   input: RouteAndCompleteInput,
   db?: Db,
 ): Promise<RouteAndCompleteResult> {
-  const route = config.tasks[input.taskType];
+  // Vain config.yaml:n omat avaimet kelpaavat (ei periytyviä: constructor, toString, __proto__).
+  const route = Object.hasOwn(config.tasks, input.taskType) ? config.tasks[input.taskType] : undefined;
   if (!route) {
     throw new Error(
-      `Tuntematon tehtävätyyppi '${input.taskType}'. Saatavilla config.yaml:ssa: ${Object.keys(config.tasks).join(", ")}`,
+      `Unknown task type '${input.taskType}'. Available in config.yaml: ${Object.keys(config.tasks).join(", ")}`,
     );
   }
 
@@ -112,7 +113,7 @@ export async function routeAndComplete(
     // Budjettiraja ei ole mallivirhe: sitä ei kirjata error-riviksi eikä sen viestiä sotketa.
     if (err instanceof LimitExceededError) throw err;
     const fallbackError = err instanceof Error ? err.message : String(err);
-    const combined = `Päämalli '${route.model}' epäonnistui: ${primaryError}. Varamalli '${route.fallbackModel}' epäonnistui: ${fallbackError}`;
+    const combined = `Primary model '${route.model}' failed: ${primaryError}. Fallback model '${route.fallbackModel}' failed: ${fallbackError}`;
     logCallSafely(db, {
       taskType: input.taskType,
       modelRequested: route.model,

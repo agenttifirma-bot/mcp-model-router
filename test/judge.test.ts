@@ -137,7 +137,7 @@ describe("run_eval: LLM-tuomari", () => {
     const report = await runEval(config(), { promptSetPath: promptSet(), models: ["model-a"] });
 
     expect(report.cases[0].judgeScore).toBeNull();
-    expect(report.cases[0].judgeError).toMatch(/yksiselitteistä pistettä/);
+    expect(report.cases[0].judgeError).toMatch(/unambiguous score/);
     expect(report.cases[0].error).toBeNull();
     expect(report.cases[0].response).toBe("hei");
     expect(report.perModel[0].avgJudgeScore).toBeNull();

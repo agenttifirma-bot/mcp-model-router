@@ -89,7 +89,7 @@ describe("routeAndComplete: varamallin epäonnistuminen ja aikakatkaisut", () =>
 
     expect(result.usedFallback).toBe(true);
     expect(result.text).toBe("varavastaus");
-    expect(result.primaryError).toMatch(/aikakatkaistiin \(30 ms\)/);
+    expect(result.primaryError).toMatch(/timed out \(30 ms\)/);
   });
 
   it("varamalli saa oman aikakatkaisunsa: hidas varamalli epäonnistuu aikakatkaisuun", async () => {
@@ -105,6 +105,6 @@ describe("routeAndComplete: varamallin epäonnistuminen ja aikakatkaisut", () =>
 
     const err = await routeAndComplete(config, { taskType: "general", prompt: "moi" }).catch((e: unknown) => e);
 
-    expect((err as Error).message).toMatch(/aikakatkaistiin \(30 ms\)/);
+    expect((err as Error).message).toMatch(/timed out \(30 ms\)/);
   });
 });

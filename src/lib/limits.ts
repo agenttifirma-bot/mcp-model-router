@@ -13,6 +13,13 @@ export const MAX_CALLS_PER_EVAL_RUN = 200;
 /** Päiväkohtainen tokenibudjetti (varatut + toteutuneet tokenit). */
 export const DAILY_TOKEN_BUDGET = 1_000_000;
 
+/**
+ * Suurin aikakatkaisu (ms), jonka Noden setTimeout hyväksyy (2^31 - 1, noin 24,8 vrk).
+ * Suurempi arvo ei odota pidempään, vaan Node asettaa ajastimen 1 ms:iin, jolloin
+ * jokainen mallikutsu aikakatkaistaan heti.
+ */
+export const MAX_TIMEOUT_MS = 2_147_483_647;
+
 /** Aikavyöhyke, jonka mukaan "päivä" määritellään. Ainoa paikka, jossa päivä määritellään: budgetDay(). */
 export const BUDGET_TIME_ZONE = "Europe/Helsinki";
 
@@ -30,7 +37,7 @@ export const EMPTY_RESPONSE_CODE = "vastaus_tyhja";
 export class EmptyResponseError extends Error {
   readonly code = EMPTY_RESPONSE_CODE;
   constructor(model: string) {
-    super(`${EMPTY_RESPONSE_CODE}: malli '${model}' palautti tyhjän vastauksen`);
+    super(`${EMPTY_RESPONSE_CODE}: model '${model}' returned an empty response`);
     this.name = "EmptyResponseError";
   }
 }

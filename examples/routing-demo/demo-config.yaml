@@ -1,0 +1,36 @@
+# Config for the routing demo (examples/routing-demo/run.mjs).
+# The demo starts a local fake OpenAI-compatible provider and points
+# LLM_BASE_URL at it, so no real model is called and no API key is needed.
+server:
+  name: mcp-model-router
+  version: "0.1.2"
+
+provider:
+  baseUrl: ${LLM_BASE_URL:-http://127.0.0.1:9}
+  apiKey: ""
+  timeoutMs: 5000
+  kind: litellm
+  modelsCacheTtlMs: 0
+
+# Routing rules: one primary model (and an optional fallback) per task type.
+tasks:
+  general:
+    model: demo/fast-cheap
+  code:
+    model: demo/coder
+    fallbackModel: demo/fast-cheap
+  writing:
+    model: demo/writer
+  orchestration:
+    # The fake provider answers HTTP 503 for every model whose id contains
+    # "unavailable", so this task type shows the fallback model taking over.
+    model: demo/planner-unavailable
+    fallbackModel: demo/fast-cheap
+
+usage:
+  provider: litellm
+  baseUrl: ${LLM_BASE_URL:-http://127.0.0.1:9}
+  apiKey: ""
+
+database:
+  path: ${DB_PATH:-./data/routing-demo.sqlite}

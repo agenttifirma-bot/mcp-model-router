@@ -1,7 +1,7 @@
 {
   "name": "mcp-model-router",
-  "version": "0.1.1",
-  "description": "MCP-palvelin, joka valitsee mallin tehtävätyypin mukaan, näyttää LiteLLM/OpenRouter-kulutuksen ja vertailee malleja eval-ajoilla. Täydentää LiteLLM:ää, ei korvaa sitä.",
+  "version": "0.1.2",
+  "description": "MCP server that picks a model by task type, shows LiteLLM/OpenRouter spend, and compares models with eval runs. Complements LiteLLM, does not replace it.",
   "license": "MIT",
   "type": "module",
   "private": false,
@@ -19,6 +19,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "start:http": "MCP_TRANSPORT=http node dist/index.js",
+    "example": "node examples/routing-demo/run.mjs",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",

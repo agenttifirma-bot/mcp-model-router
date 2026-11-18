@@ -5,7 +5,7 @@
  */
 
 import { estimateInputTokens, type TokenBudget } from "./budget.js";
-import { EmptyResponseError, LimitExceededError, MAX_TOKENS_PER_CALL } from "./limits.js";
+import { EmptyResponseError, LimitExceededError, MAX_TIMEOUT_MS, MAX_TOKENS_PER_CALL } from "./limits.js";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -49,17 +49,23 @@ export async function callChatCompletion(opts: CallChatCompletionOptions): Promi
   // 1) Kattotarkistus ennen mitään muuta: liian suurta max_tokensia ei pienennetä hiljaa, vaan kutsu hylätään.
   if (opts.maxTokens !== undefined) {
     if (!Number.isInteger(opts.maxTokens) || opts.maxTokens < 1 || opts.maxTokens > MAX_TOKENS_PER_CALL) {
-      throw new LimitExceededError(`maxTokens täytyy olla kokonaisluku väliltä 1-${MAX_TOKENS_PER_CALL}; kutsua ei tehty`);
+      throw new LimitExceededError(`maxTokens must be an integer between 1 and ${MAX_TOKENS_PER_CALL}; no call made`);
     }
   }
   const maxTokens = opts.maxTokens ?? MAX_TOKENS_PER_CALL;
+  // Ennen varausta: virheellinen aikakatkaisu ei saa kuluttaa budjettia.
+  // Liian suuri arvo ylivuotaisi setTimeoutissa 1 ms:iin ja katkaisisi jokaisen kutsun heti.
+  const timeoutMs = opts.timeoutMs ?? 60_000;
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > MAX_TIMEOUT_MS) {
+    throw new Error(`timeoutMs must be an integer between 1 and ${MAX_TIMEOUT_MS}; no call made`);
+  }
 
   // 2) Varaus ENNEN kutsua: syötteen arvio + max_tokens. Epäonnistunut kutsu ei vapauta varausta.
   const reservation = opts.budget.reserve(estimateInputTokens(opts.messages) + maxTokens);
 
   const url = joinUrl(opts.baseUrl, "/chat/completions");
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? 60_000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(url, {
@@ -79,7 +85,7 @@ export async function callChatCompletion(opts: CallChatCompletionOptions): Promi
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      throw new Error(`Mallipyyntö malliin '${opts.model}' epäonnistui (${res.status} ${res.statusText}): ${body.slice(0, 500)}`);
+      throw new Error(`Request to model '${opts.model}' failed (${res.status} ${res.statusText}): ${body.slice(0, 500)}`);
     }
 
     const json = (await res.json()) as {
@@ -109,7 +115,7 @@ export async function callChatCompletion(opts: CallChatCompletionOptions): Promi
     return { text, model: json.model ?? opts.model, usage, raw: json };
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(`Mallipyyntö malliin '${opts.model}' aikakatkaistiin (${opts.timeoutMs ?? 60_000} ms)`);
+      throw new Error(`Request to model '${opts.model}' timed out (${timeoutMs} ms)`);
     }
     throw err;
   } finally {

@@ -260,7 +260,7 @@ describe("run_eval: sallitut mallit (katselmointi 28.10., löydös 3)", () => {
     };
     await expect(
       runEval(config, { promptSetPath: "/ei/ole/olemassa.json", models: ["m1", "kallis-malli"] }, undefined, { evalDir: "/tmp" }),
-    ).rejects.toThrow(/eivät ole sallittuja: kallis-malli/);
+    ).rejects.toThrow(/models not allowed: kallis-malli/);
   });
 
   it("sallii tasks-osion päämallin, varamallin ja eval.allowedModels-listan mallit", async () => {
@@ -270,5 +270,55 @@ describe("run_eval: sallitut mallit (katselmointi 28.10., löydös 3)", () => {
       eval: { allowedModels: ["x"] },
     } as never);
     expect([...s].sort()).toEqual(["m1", "m2", "m3", "x"]);
+  });
+});
+
+describe("run_eval: toistuvat mallit ja tapaus-id:t", () => {
+  const config = {
+    server: { name: "t", version: "0" },
+    provider: { baseUrl: "http://litellm.local:4000", apiKey: "", timeoutMs: 1000, kind: "litellm" as const },
+    tasks: { general: { model: "m1" } },
+    usage: { provider: "litellm" as const, baseUrl: "http://litellm.local:4000", apiKey: "" },
+    eval: { judge: { enabled: false }, pricing: {}, concurrency: 1, allowedModels: [] },
+    database: { path: ":memory:" },
+  };
+
+  it("hylkää saman mallin kahdesti ennen tiedoston lukua, kirjauksia ja kutsuja", async () => {
+    const db = new Db(":memory:");
+    await expect(
+      runEval(config, { promptSetPath: "/ei/ole/olemassa.json", models: ["m1", "m1"], runId: "toisto" }, db, { evalDir: "/tmp" }),
+    ).rejects.toThrow(/more than once in the list: m1\. Run not started/);
+    expect(db.getEvalRunResults("toisto")).toEqual([]);
+  });
+
+  it("hylkää prompt-tiedoston, jossa sama id toistuu", async () => {
+    const { loadPromptSet } = await import("../src/eval/runEval.js");
+    const dir = mkdtempSync(join(tmpdir(), "mcp-model-router-dup-"));
+    try {
+      const path = join(dir, "dup.json");
+      writeFileSync(
+        path,
+        JSON.stringify([
+          { id: "yleinen-01", prompt: "a", expectedContains: "x" },
+          { id: "yleinen-01", prompt: "b" },
+        ]),
+        "utf8",
+      );
+      expect(() => loadPromptSet(path)).toThrow(/1\.id: id 'yleinen-01' is duplicated/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("hyväksyy eri id:t ja eri mallit kuten ennenkin", async () => {
+    const { loadPromptSet } = await import("../src/eval/runEval.js");
+    const dir = mkdtempSync(join(tmpdir(), "mcp-model-router-dup-"));
+    try {
+      const path = join(dir, "ok.json");
+      writeFileSync(path, JSON.stringify([{ id: "a-1", prompt: "a" }, { id: "a-2", prompt: "b" }]), "utf8");
+      expect(loadPromptSet(path).map((c) => c.id)).toEqual(["a-1", "a-2"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

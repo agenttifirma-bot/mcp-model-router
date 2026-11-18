@@ -10,7 +10,7 @@ import type { CallLogRow, Db, EvalResultRow } from "./db.js";
 function varoita(mita: string, err: unknown): void {
   const nimi = err instanceof Error ? err.name : typeof err;
   const viesti = err instanceof Error ? err.message : String(err);
-  process.stderr.write(`mcp-model-router: ${mita} epäonnistui (${nimi}): ${viesti.slice(0, 200)}\n`);
+  process.stderr.write(`mcp-model-router: ${mita} failed (${nimi}): ${viesti.slice(0, 200)}\n`);
 }
 
 export function logCallSafely(db: Db | undefined, row: CallLogRow): void {
@@ -18,7 +18,7 @@ export function logCallSafely(db: Db | undefined, row: CallLogRow): void {
   try {
     db.insertCallLog(row);
   } catch (err) {
-    varoita("kutsulokin kirjaus", err);
+    varoita("call log write", err);
   }
 }
 
@@ -27,6 +27,6 @@ export function logEvalResultSafely(db: Db | undefined, row: EvalResultRow): voi
   try {
     db.insertEvalResult(row);
   } catch (err) {
-    varoita("eval-tuloksen kirjaus", err);
+    varoita("eval result write", err);
   }
 }
