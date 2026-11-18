@@ -19,6 +19,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "start:http": "MCP_TRANSPORT=http node dist/index.js",
+    "example": "node examples/routing-demo/run.mjs",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
