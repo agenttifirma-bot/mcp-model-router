@@ -64,7 +64,7 @@ export async function fetchAvailableModels(
     });
   } catch (err) {
     if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
-      throw new ModelsFetchError(`mallilistan haku aikakatkaistiin (${ms} ms)`);
+      throw new ModelsFetchError(`model list fetch timed out (${ms} ms)`);
     }
     throw new ModelsFetchError(`model list fetch failed (${err instanceof Error ? err.name : typeof err})`);
   }

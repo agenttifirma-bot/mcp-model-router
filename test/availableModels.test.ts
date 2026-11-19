@@ -93,7 +93,7 @@ describe("mallilista /models-rajapinnasta", () => {
 
   it("aikakatkaisu antaa selkeän virheen", async () => {
     mockAgent.get(BASE).intercept({ path: "/models", method: "GET" }).reply(200, { data: [] }).delay(300);
-    await expect(fetchAvailableModels(makeConfig({ modelsTimeoutMs: 50 }).provider)).rejects.toThrow(/aikakatkaistiin/);
+    await expect(fetchAvailableModels(makeConfig({ modelsTimeoutMs: 50 }).provider)).rejects.toThrow(/timed out \(50 ms\)/);
   });
 
   describe("list_models-työkalu", () => {
