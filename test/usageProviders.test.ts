@@ -31,6 +31,25 @@ describe("fetchUsage", () => {
     expect(snapshot.summary.remainingUsd).toBe(87.5);
   });
 
+  it("rajaa LiteLLM:n raw-kentan sallittuihin kenttiin (ei avainten metatietoja)", async () => {
+    const pool = mockAgent.get("http://litellm.local:4000");
+    pool.intercept({ path: "/user/info", method: "GET" }).reply(200, {
+      user_id: "u-secret",
+      user_info: { spend: 1, max_budget: 5, user_email: "a@b.c", metadata: { x: 1 } },
+      keys: [{ token: "hash123", key_name: "sk-...abcd", key_alias: "alias", team_id: "t1" }],
+      teams: [{ team_id: "t1" }],
+    });
+
+    const snapshot = await fetchUsage({ provider: "litellm", baseUrl: "http://litellm.local:4000", apiKey: "" });
+    const raw = JSON.stringify(snapshot.raw);
+
+    expect(snapshot.raw).toEqual({ user_info: { spend: 1, max_budget: 5 } });
+    for (const vuoto of ["hash123", "sk-...abcd", "alias", "u-secret", "a@b.c", "t1"]) {
+      expect(raw).not.toContain(vuoto);
+    }
+    expect(snapshot.summary.remainingUsd).toBe(4);
+  });
+
   it("lukee OpenRouterin /credits-vastauksen", async () => {
     const pool = mockAgent.get("https://openrouter.ai");
     pool

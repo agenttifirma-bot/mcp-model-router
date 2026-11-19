@@ -17,6 +17,23 @@ export interface UsageSnapshot {
   raw: unknown;
 }
 
+/**
+ * LiteLLM:n /user/info palauttaa myos avainten metatietoja (keys[]: token-tiiviste,
+ * key_name, key_alias, user_id, team_id, metadata) ja tiimit. get_usage ei valita
+ * niita: raw-kenttaan paasee vain kulutus- ja budjettikentat.
+ */
+export const LITELLM_RAW_ALLOWED_FIELDS = ["spend", "max_budget", "budget_duration", "budget_reset_at"] as const;
+
+export function pickAllowedFields(source: unknown): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (typeof source !== "object" || source === null) return out;
+  const rec = source as Record<string, unknown>;
+  for (const key of LITELLM_RAW_ALLOWED_FIELDS) {
+    if (key in rec) out[key] = rec[key];
+  }
+  return out;
+}
+
 export const USAGE_TIMEOUT_MS = 15_000;
 
 /** fetch aikakatkaisulla: sekä yhteys että vastausrungon luku keskeytetään. */
@@ -54,7 +71,7 @@ async function fetchLiteLlmUsage(config: UsageConfig): Promise<UsageSnapshot> {
   const budget = typeof info.max_budget === "number" ? info.max_budget : null;
   return {
     provider: "litellm",
-    raw: json,
+    raw: { user_info: pickAllowedFields(info) },
     summary: {
       spendUsd: spend,
       budgetUsd: budget,
