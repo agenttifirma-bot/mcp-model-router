@@ -11,6 +11,7 @@ All notable changes are recorded in this file. The format follows the
 ### Changed
 - `run_eval` errors for an unreadable, invalid or malformed prompt file now name the file by base name only: no resolved path, no system error text and no values from the file. Schema errors name only the task position and field (for example `1.id: id is duplicated`); before, the duplicate-id error quoted the id from the file.
 - **Behavior change:** the usage endpoint's response must be a JSON object. A JSON `null`, number, string or array now makes `get_usage` return an error (`... returned an unexpected response: expected a JSON object`). Before, `null` crashed with "Cannot read properties of null", and a number, string or array gave a "not available" result without an error. A caller that relied on that quiet result now sees an error instead.
+- The HTTP transport now prints a startup warning whenever the host is not a localhost address and `MCP_ALLOWED_HOSTS` is unset (previously only for `0.0.0.0` and `::`). Default behaviour is unchanged.
 - User-visible error messages and stderr lines (config, eval, routing, model client, HTTP transport, usage and log warnings) are now in English instead of Finnish (3caf3f4, #70).
 - The `description` in `package.json` (shown on npmjs.com and in npm search) is now in English. A test keeps it and `keywords` free of Finnish letters (3de7770, #71).
 

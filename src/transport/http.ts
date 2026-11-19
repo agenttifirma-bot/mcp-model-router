@@ -41,9 +41,10 @@ export function startHttpTransport(createServer: () => McpServer, options: HttpT
     app.use(hostHeaderValidation(options.allowedHosts));
   } else if (localhostHosts.includes(options.host)) {
     app.use(localhostHostValidation());
-  } else if (options.host === "0.0.0.0" || options.host === "::") {
+  } else {
+    // Any non-localhost host (0.0.0.0, ::, a Tailscale IP, ...) has no DNS rebinding protection.
     console.warn(
-      `Varoitus: kuunnellaan osoitteessa ${options.host} ilman DNS rebinding -suojaa; aseta allowedHosts (MCP_ALLOWED_HOSTS).`,
+      `Warning: listening on ${options.host} without DNS rebinding protection; set allowedHosts (MCP_ALLOWED_HOSTS).`,
     );
   }
 
