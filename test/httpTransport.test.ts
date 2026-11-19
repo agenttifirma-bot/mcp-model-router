@@ -123,3 +123,41 @@ describe("HTTP: palvelin ja transport suljetaan kaikilla poluilla (löydös 8)",
     }
   });
 });
+
+describe("HTTP: warning when DNS rebinding protection is off", () => {
+  // Binding to a non-local address fails with EADDRNOTAVAIL; the warning is
+  // printed before listen, so the test only needs the stderr output.
+  function warnings(host: string, allowedHosts?: string[]): string[] {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const server = startHttpTransport(() => new McpServer({ name: "t", version: "0" }), {
+      host,
+      port: 0,
+      authToken: TOKEN,
+      allowedHosts,
+      onListenError: () => {},
+    });
+    const lines = spy.mock.calls.map((c) => String(c[0]));
+    spy.mockRestore();
+    server.close();
+    return lines;
+  }
+
+  it("warns for a Tailscale-style IP without allowedHosts", () => {
+    const lines = warnings("100.64.0.10");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("100.64.0.10");
+    expect(lines[0]).toContain("MCP_ALLOWED_HOSTS");
+  });
+
+  it("still warns for 0.0.0.0 and ::", () => {
+    expect(warnings("0.0.0.0")).toHaveLength(1);
+    expect(warnings("::")).toHaveLength(1);
+  });
+
+  it("does not warn for localhost hosts or when allowedHosts is set", () => {
+    expect(warnings("127.0.0.1")).toHaveLength(0);
+    expect(warnings("localhost")).toHaveLength(0);
+    expect(warnings("::1")).toHaveLength(0);
+    expect(warnings("100.64.0.10", ["my-lxc.tailnet.ts.net"])).toHaveLength(0);
+  });
+});

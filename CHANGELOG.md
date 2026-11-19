@@ -9,6 +9,7 @@ All notable changes are recorded in this file. The format follows the
 - A runnable routing demo in `examples/routing-demo` with a fake provider: `npm run example` routes tasks through the real router without an API key. An end-to-end test (`test/example.e2e.test.ts`) runs it in CI, and the README has a "Try it in a minute" section (c4eb246, #69).
 
 ### Changed
+- The HTTP transport now prints a startup warning whenever the host is not a localhost address and `MCP_ALLOWED_HOSTS` is unset (previously only for `0.0.0.0` and `::`), and the env example recommends setting it for Tailscale addresses. Default behaviour is unchanged.
 - User-visible error messages and stderr lines (config, eval, routing, model client, HTTP transport, usage and log warnings) are now in English instead of Finnish (3caf3f4, #70).
 - The `description` in `package.json` (shown on npmjs.com and in npm search) is now in English. A test keeps it and `keywords` free of Finnish letters (3de7770, #71).
 
