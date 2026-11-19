@@ -12,6 +12,7 @@ All notable changes are recorded in this file. The format follows the
 - The HTTP transport now prints a startup warning whenever the host is not a localhost address and `MCP_ALLOWED_HOSTS` is unset (previously only for `0.0.0.0` and `::`). Default behaviour is unchanged.
 - User-visible error messages and stderr lines (config, eval, routing, model client, HTTP transport, usage and log warnings) are now in English instead of Finnish (3caf3f4, #70).
 - The `description` in `package.json` (shown on npmjs.com and in npm search) is now in English. A test keeps it and `keywords` free of Finnish letters (3de7770, #71).
+- Tool titles, descriptions, parameter descriptions and the text output of all four tools (`route_and_complete`, `list_models`, `get_usage`, `run_eval`) are in English like the README and `config.example.yaml`. MCP clients and the LLMs behind them read these texts, so an English-speaking user previously got Finnish tool descriptions. `structuredContent` is unchanged. The routing demo reads the new `model:` / `(fallback used)` output, and the new test `test/toolText.test.ts` checks that the tool metadata contains no Finnish letters.
 
 ### Other
 - CI: Python tests (`python -m unittest discover`) run on Python versions 3.10-3.13 (55602a1, #60). `__pycache__/` and `*.pyc` added to `.gitignore`.
