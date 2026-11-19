@@ -291,6 +291,35 @@ describe("run_eval: toistuvat mallit ja tapaus-id:t", () => {
     expect(db.getEvalRunResults("toisto")).toEqual([]);
   });
 
+  it("skeemavirheet eivat lainaa tiedoston sisaltoa", async () => {
+    const { loadPromptSet } = await import("../src/eval/runEval.js");
+    const dir = mkdtempSync(join(tmpdir(), "mcp-model-router-leak-"));
+    try {
+      const path = join(dir, "leak.json");
+      writeFileSync(
+        path,
+        JSON.stringify([
+          { id: "SALAINEN-ID", prompt: "a" },
+          { id: "SALAINEN-ID", prompt: "b" },
+          { id: "x", prompt: 42, expectedContains: "SALAINEN-ARVO" },
+        ]),
+        "utf8",
+      );
+      let viesti = "";
+      try {
+        loadPromptSet(path);
+      } catch (err) {
+        viesti = err instanceof Error ? err.message : "";
+      }
+      expect(viesti).toContain("leak.json");
+      expect(viesti).toContain("is invalid");
+      expect(viesti).not.toContain("SALAINEN");
+      expect(viesti).not.toContain(dir);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("hylkää prompt-tiedoston, jossa sama id toistuu", async () => {
     const { loadPromptSet } = await import("../src/eval/runEval.js");
     const dir = mkdtempSync(join(tmpdir(), "mcp-model-router-dup-"));
@@ -304,7 +333,7 @@ describe("run_eval: toistuvat mallit ja tapaus-id:t", () => {
         ]),
         "utf8",
       );
-      expect(() => loadPromptSet(path)).toThrow(/1\.id: id 'yleinen-01' is duplicated/);
+      expect(() => loadPromptSet(path)).toThrow(/1\.id: id is duplicated/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
