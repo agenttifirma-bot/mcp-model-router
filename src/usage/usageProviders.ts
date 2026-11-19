@@ -66,7 +66,13 @@ async function fetchLiteLlmUsage(config: UsageConfig): Promise<UsageSnapshot> {
     spend?: number;
     max_budget?: number | null;
   };
-  const info = json.user_info ?? json;
+  // Older LiteLLM versions return spend and max_budget at the top level, and
+  // some responses carry user_info without them. Fields in user_info win;
+  // the top level fills in what user_info lacks.
+  const info = { ...pickAllowedFields(json), ...pickAllowedFields(json.user_info) } as {
+    spend?: number;
+    max_budget?: number | null;
+  };
   const spend = typeof info.spend === "number" ? info.spend : null;
   const budget = typeof info.max_budget === "number" ? info.max_budget : null;
   return {

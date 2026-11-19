@@ -50,6 +50,34 @@ describe("fetchUsage", () => {
     expect(snapshot.summary.remainingUsd).toBe(4);
   });
 
+  it("poimii LiteLLM:n kulutuksen ylatasolta (vanhempi vastausmuoto) raw-kenttaan", async () => {
+    const pool = mockAgent.get("http://litellm.local:4000");
+    pool.intercept({ path: "/user/info", method: "GET" }).reply(200, {
+      spend: 2,
+      max_budget: 10,
+      keys: [{ token: "hash123" }],
+    });
+
+    const snapshot = await fetchUsage({ provider: "litellm", baseUrl: "http://litellm.local:4000", apiKey: "" });
+
+    expect(snapshot.raw).toEqual({ user_info: { spend: 2, max_budget: 10 } });
+    expect(JSON.stringify(snapshot.raw)).not.toContain("hash123");
+    expect(snapshot.summary.remainingUsd).toBe(8);
+  });
+
+  it("taydentaa puuttuvan user_info-kulutuksen ylatason kentilla", async () => {
+    const pool = mockAgent.get("http://litellm.local:4000");
+    pool.intercept({ path: "/user/info", method: "GET" }).reply(200, {
+      spend: 3,
+      user_info: { max_budget: 9, user_email: "a@b.c" },
+    });
+
+    const snapshot = await fetchUsage({ provider: "litellm", baseUrl: "http://litellm.local:4000", apiKey: "" });
+
+    expect(snapshot.raw).toEqual({ user_info: { spend: 3, max_budget: 9 } });
+    expect(snapshot.summary.spendUsd).toBe(3);
+  });
+
   it("lukee OpenRouterin /credits-vastauksen", async () => {
     const pool = mockAgent.get("https://openrouter.ai");
     pool

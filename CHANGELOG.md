@@ -10,6 +10,8 @@ All notable changes are recorded in this file. The format follows the
 
 ### Security
 - `get_usage` with `includeRaw` no longer returns the full LiteLLM `/user/info` response (which includes `keys[]` metadata such as the key hash, `key_name`, `key_alias`, `user_id`, `team_id` and `metadata`). Only `spend`, `max_budget`, `budget_duration` and `budget_reset_at` are passed through.
+  - **Breaking:** for the LiteLLM provider, `raw` now always has the shape `{ "user_info": { ... } }` with only those four fields, whatever shape LiteLLM returned. Before, `raw` was the unmodified response, so code that read `raw.keys`, `raw.teams`, `raw.user_id` or other fields now finds nothing. Read `summary` instead. The OpenRouter `raw` is not changed.
+  - For older LiteLLM versions that return `spend` and `max_budget` at the top level, those values are taken from the top level, and a field missing from `user_info` is filled in from the top level, so `raw` and `summary` are not left empty.
 
 ### Changed
 - User-visible error messages and stderr lines (config, eval, routing, model client, HTTP transport, usage and log warnings) are now in English instead of Finnish (3caf3f4, #70).
