@@ -9,6 +9,7 @@ All notable changes are recorded in this file. The format follows the
 - A runnable routing demo in `examples/routing-demo` with a fake provider: `npm run example` routes tasks through the real router without an API key. An end-to-end test (`test/example.e2e.test.ts`) runs it in CI, and the README has a "Try it in a minute" section (c4eb246, #69).
 
 ### Changed
+- `run_eval` errors for an unreadable, invalid or malformed prompt file now name the file by base name only: no resolved path, no system error text and no JSON content. A usage endpoint that returns JSON `null` or another non-object value gives a clear error instead of "Cannot read properties of null".
 - User-visible error messages and stderr lines (config, eval, routing, model client, HTTP transport, usage and log warnings) are now in English instead of Finnish (3caf3f4, #70).
 - The `description` in `package.json` (shown on npmjs.com and in npm search) is now in English. A test keeps it and `keywords` free of Finnish letters (3de7770, #71).
 

@@ -37,6 +37,14 @@ async function getJson(url: string, config: UsageConfig, nimi: string): Promise<
   }
 }
 
+/** A JSON `null`, number, string or array would crash property access later; fail with a clear message instead. */
+function requireObject(json: unknown, nimi: string): Record<string, unknown> {
+  if (json === null || typeof json !== "object" || Array.isArray(json)) {
+    throw new Error(`${nimi} returned an unexpected response: expected a JSON object`);
+  }
+  return json as Record<string, unknown>;
+}
+
 export async function fetchUsage(config: UsageConfig): Promise<UsageSnapshot> {
   if (config.provider === "openrouter") return fetchOpenRouterUsage(config);
   return fetchLiteLlmUsage(config);
@@ -44,7 +52,7 @@ export async function fetchUsage(config: UsageConfig): Promise<UsageSnapshot> {
 
 async function fetchLiteLlmUsage(config: UsageConfig): Promise<UsageSnapshot> {
   const url = joinUrl(config.baseUrl, "/user/info");
-  const json = (await getJson(url, config, "LiteLLM")) as {
+  const json = requireObject(await getJson(url, config, "LiteLLM"), "LiteLLM") as {
     user_info?: { spend?: number; max_budget?: number | null };
     spend?: number;
     max_budget?: number | null;
@@ -65,7 +73,7 @@ async function fetchLiteLlmUsage(config: UsageConfig): Promise<UsageSnapshot> {
 
 async function fetchOpenRouterUsage(config: UsageConfig): Promise<UsageSnapshot> {
   const url = joinUrl(config.baseUrl, "/credits");
-  const json = (await getJson(url, config, "OpenRouter")) as {
+  const json = requireObject(await getJson(url, config, "OpenRouter"), "OpenRouter") as {
     data?: { total_credits?: number; total_usage?: number };
   };
   const data = json.data ?? {};

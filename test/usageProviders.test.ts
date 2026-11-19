@@ -69,4 +69,23 @@ describe("fetchUsage", () => {
     pool.intercept({ path: "/credits", method: "GET" }).reply(503, "huolto");
     await expect(fetchUsage({ provider: "openrouter", baseUrl: "https://openrouter.ai", apiKey: "" })).rejects.toThrow(/503/);
   });
+
+  it.each([
+    ["litellm", "http://litellm.local:4000", "/user/info"],
+    ["openrouter", "https://openrouter.ai", "/credits"],
+  ] as const)("%s: a null or non-object JSON response gives a clear error", async (provider, base, path) => {
+    for (const body of ["null", "42", '"text"', "[1,2]"]) {
+      mockAgent
+        .get(base)
+        .intercept({ path, method: "GET" })
+        .reply(200, body, { headers: { "content-type": "application/json" } });
+      const err = await fetchUsage({ provider, baseUrl: base, apiKey: "" }).then(
+        () => null,
+        (e: unknown) => e as Error,
+      );
+      expect(err).toBeInstanceOf(Error);
+      expect(err!.message).toMatch(/unexpected response.*expected a JSON object/);
+      expect(err!.message).not.toMatch(/Cannot read properties/);
+    }
+  });
 });

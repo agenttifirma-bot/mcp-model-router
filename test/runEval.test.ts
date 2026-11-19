@@ -322,3 +322,42 @@ describe("run_eval: toistuvat mallit ja tapaus-id:t", () => {
     }
   });
 });
+
+describe("run_eval: errors do not reveal paths or file contents", () => {
+  const config = baseConfig();
+
+  async function runWithFile(content: string) {
+    const dir = mkdtempSync(join(tmpdir(), "mcp-model-router-leak-"));
+    try {
+      writeFileSync(join(dir, "rikki.json"), content, "utf8");
+      const db = new Db(":memory:");
+      const err = await runEval(config, { promptSetPath: "rikki.json", models: ["model-a"], runId: "vuoto" }, db, { evalDir: dir }).then(
+        () => null,
+        (e: unknown) => e as Error,
+      );
+      return { err, dir };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("invalid JSON: message has the base name only, no path and no file content", async () => {
+    const { err, dir } = await runWithFile('{"salainen-avain": "arkaluonteinen-sisalto", ');
+    expect(err).toBeInstanceOf(Error);
+    expect(err!.message).toContain("rikki.json");
+    expect(err!.message).toContain("not valid JSON");
+    expect(err!.message).not.toContain(dir);
+    expect(err!.message).not.toContain("/");
+    expect(err!.message).not.toContain("arkaluonteinen");
+    expect(err!.message).not.toContain("salainen");
+  });
+
+  it("schema error: message has the base name only, no path", async () => {
+    const { err, dir } = await runWithFile(JSON.stringify([{ id: "a-1" }]));
+    expect(err).toBeInstanceOf(Error);
+    expect(err!.message).toContain("rikki.json");
+    expect(err!.message).toContain("is invalid");
+    expect(err!.message).not.toContain(dir);
+    expect(err!.message).not.toContain("/");
+  });
+});
