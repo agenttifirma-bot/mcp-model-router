@@ -184,6 +184,10 @@ cp config.example.yaml config.yaml   # edit as needed
 npm run build
 ```
 
+> **Troubleshooting:** `npm ci --ignore-scripts` (or `ignore-scripts=true` in `.npmrc`) skips building the
+> native `better-sqlite3` module, and the server and tests then fail with `Could not locate the bindings file`.
+> Fix it with `npm rebuild better-sqlite3` (needs a C/C++ toolchain if no prebuilt binary matches your Node version).
+
 Environment variables (example values, no secrets in the repository):
 
 | Variable            | Description                                                    | Default                   |
