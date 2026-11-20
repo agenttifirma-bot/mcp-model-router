@@ -1,14 +1,33 @@
 // End-to-end test for examples/routing-demo: spawns the real MCP server over
 // stdio, talks to it with the MCP SDK client and checks the routing against a
 // local fake provider. No network beyond 127.0.0.1 and no API key.
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 
 // CI builds before `npm test`, so the example runs exactly as a user runs it
-// (dist/index.js). Without a build, fall back to the TypeScript source via tsx.
-const fromSource = !existsSync("dist/index.js");
+// (dist/index.js). Without a build, or when dist is older than the newest file
+// under src/ (a stale build would test old code), fall back to the TypeScript
+// source via tsx so the test always exercises the current code.
+function newestMtimeMs(dir: string): number {
+  let newest = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    const mtime = entry.isDirectory() ? newestMtimeMs(path) : statSync(path).mtimeMs;
+    if (mtime > newest) newest = mtime;
+  }
+  return newest;
+}
+
+const distEntry = "dist/index.js";
+const distMissing = !existsSync(distEntry);
+const distStale = !distMissing && statSync(distEntry).mtimeMs < newestMtimeMs("src");
+const fromSource = distMissing || distStale;
+if (distStale) {
+  console.warn("dist is stale (older than src/), running the e2e test from source via tsx. Run `npm run build` to refresh dist.");
+}
 
 describe("examples/routing-demo (e2e over MCP stdio)", () => {
   it("routes each task type to its configured model and falls back on failure", async () => {
