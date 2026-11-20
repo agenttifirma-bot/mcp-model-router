@@ -305,8 +305,19 @@ tasks:
 |-----------------------|-------------------------------------------------------------------------|
 | `route_and_complete`  | Picks a model by the `taskType` parameter and completes the prompt. Uses the fallback model when needed. Optional `maxTokens` (integer 1-4096; a larger value is rejected). |
 | `list_models`         | Lists the task types in `config.yaml` and the models available from the server's `/models` endpoint (cached; optional `refresh` bypasses the cache; unreleased, see the limitations below). |
-| `get_usage`           | Returns the state of usage and budget from LiteLLM/OpenRouter.         |
+| `get_usage`           | Returns the state of usage and budget from LiteLLM/OpenRouter. Optional `includeRaw` (boolean, default `false`) adds the provider's raw response; see [`get_usage` and `includeRaw`](#get_usage-and-includeraw). |
 | `run_eval`            | Runs a JSON prompt set across several models and reports cost/latency/quality. |
+
+### `get_usage` and `includeRaw`
+
+`get_usage` returns `source`, `spend`, `budget` and `remaining` as text, and the same values as `summary` in `structuredContent`. With `includeRaw: true` it appends a second text block, `raw response:`, with JSON from the provider:
+
+| Provider (`usage.provider`) | `raw` contains |
+|-----------------------------|----------------|
+| `litellm`                   | `{ "user_info": { ... } }` with only the fields `spend`, `max_budget`, `budget_duration` and `budget_reset_at` (a field appears only if LiteLLM returned it). Everything else in LiteLLM's `/user/info` response, such as `keys[]` metadata (key hash, `key_name`, `key_alias`), `user_id`, `team_id`, teams and `metadata`, is dropped. |
+| `openrouter`                | The unmodified `/credits` response. |
+
+**Breaking change (unreleased):** before, the LiteLLM `raw` was the unmodified `/user/info` response. Code that read `raw.keys`, `raw.teams` or `raw.user_id` now finds nothing; read `summary` instead. Older LiteLLM versions that return `spend` and `max_budget` at the top level are handled: those values are taken from the top level, and a field missing from `user_info` is filled in from there. See the [CHANGELOG](CHANGELOG.md).
 
 For the format of the eval prompt file, see the example
 [`examples/eval-prompts.example.json`](./examples/eval-prompts.example.json):
@@ -654,6 +665,12 @@ DELETE) requires the header `Authorization: Bearer <token>`.
   unauthenticated request is not read. A parse error in an authenticated
   request returns the JSON-RPC error `-32700 Parse error`. The DNS rebinding
   protection (Host header check) is applied before that.
+- **Startup warning:** if `MCP_HTTP_HOST` is not a localhost address (`127.0.0.1`,
+  `localhost`, `::1`) and `MCP_ALLOWED_HOSTS` is not set, the server prints
+  `Warning: listening on <host> without DNS rebinding protection; set allowedHosts (MCP_ALLOWED_HOSTS).`
+  to stderr. This covers any other address too, such as a Tailscale IP, not only
+  `0.0.0.0` and `::`. The server still starts: set `MCP_ALLOWED_HOSTS` to the
+  Host values clients use (for example `100.x.y.z:3100`) to enable the check.
 
 **`run_eval` file paths (`EVAL_DIR`).** `run_eval` reads prompt files from a
 single directory only.
