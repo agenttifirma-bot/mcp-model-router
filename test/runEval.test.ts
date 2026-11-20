@@ -291,6 +291,35 @@ describe("run_eval: toistuvat mallit ja tapaus-id:t", () => {
     expect(db.getEvalRunResults("toisto")).toEqual([]);
   });
 
+  it("skeemavirheet eivat lainaa tiedoston sisaltoa", async () => {
+    const { loadPromptSet } = await import("../src/eval/runEval.js");
+    const dir = mkdtempSync(join(tmpdir(), "mcp-model-router-leak-"));
+    try {
+      const path = join(dir, "leak.json");
+      writeFileSync(
+        path,
+        JSON.stringify([
+          { id: "SALAINEN-ID", prompt: "a" },
+          { id: "SALAINEN-ID", prompt: "b" },
+          { id: "x", prompt: 42, expectedContains: "SALAINEN-ARVO" },
+        ]),
+        "utf8",
+      );
+      let viesti = "";
+      try {
+        loadPromptSet(path);
+      } catch (err) {
+        viesti = err instanceof Error ? err.message : "";
+      }
+      expect(viesti).toContain("leak.json");
+      expect(viesti).toContain("is invalid");
+      expect(viesti).not.toContain("SALAINEN");
+      expect(viesti).not.toContain(dir);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("hylkää prompt-tiedoston, jossa sama id toistuu", async () => {
     const { loadPromptSet } = await import("../src/eval/runEval.js");
     const dir = mkdtempSync(join(tmpdir(), "mcp-model-router-dup-"));
@@ -304,7 +333,7 @@ describe("run_eval: toistuvat mallit ja tapaus-id:t", () => {
         ]),
         "utf8",
       );
-      expect(() => loadPromptSet(path)).toThrow(/1\.id: id 'yleinen-01' is duplicated/);
+      expect(() => loadPromptSet(path)).toThrow(/1\.id: id is duplicated/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -320,5 +349,44 @@ describe("run_eval: toistuvat mallit ja tapaus-id:t", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("run_eval: errors do not reveal paths or file contents", () => {
+  const config = baseConfig();
+
+  async function runWithFile(content: string) {
+    const dir = mkdtempSync(join(tmpdir(), "mcp-model-router-leak-"));
+    try {
+      writeFileSync(join(dir, "rikki.json"), content, "utf8");
+      const db = new Db(":memory:");
+      const err = await runEval(config, { promptSetPath: "rikki.json", models: ["model-a"], runId: "vuoto" }, db, { evalDir: dir }).then(
+        () => null,
+        (e: unknown) => e as Error,
+      );
+      return { err, dir };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("invalid JSON: message has the base name only, no path and no file content", async () => {
+    const { err, dir } = await runWithFile('{"salainen-avain": "arkaluonteinen-sisalto", ');
+    expect(err).toBeInstanceOf(Error);
+    expect(err!.message).toContain("rikki.json");
+    expect(err!.message).toContain("not valid JSON");
+    expect(err!.message).not.toContain(dir);
+    expect(err!.message).not.toContain("/");
+    expect(err!.message).not.toContain("arkaluonteinen");
+    expect(err!.message).not.toContain("salainen");
+  });
+
+  it("schema error: message has the base name only, no path", async () => {
+    const { err, dir } = await runWithFile(JSON.stringify([{ id: "a-1" }]));
+    expect(err).toBeInstanceOf(Error);
+    expect(err!.message).toContain("rikki.json");
+    expect(err!.message).toContain("is invalid");
+    expect(err!.message).not.toContain(dir);
+    expect(err!.message).not.toContain("/");
   });
 });

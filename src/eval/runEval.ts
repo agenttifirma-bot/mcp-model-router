@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { basename } from "node:path";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { AppConfig } from "../config/schema.js";
@@ -27,24 +28,36 @@ const EvalPromptSetSchema = z
     const seen = new Set<string>();
     cases.forEach((c, index) => {
       if (seen.has(c.id)) {
-        ctx.addIssue({ code: "custom", path: [index, "id"], message: `id '${c.id}' is duplicated; each task id must be unique` });
+        ctx.addIssue({ code: "custom", path: [index, "id"], message: "id is duplicated; each task id must be unique" });
       }
       seen.add(c.id);
     });
   });
 
+/**
+ * Error messages name the file by base name only. They never include the
+ * resolved path, the system error text or any value from the file: schema
+ * issues name only the position (task index and field name) and a fixed
+ * message, because run_eval returns the message to the caller.
+ */
 export function loadPromptSet(path: string): EvalPromptCase[] {
-  const raw = readFileSync(path, "utf8");
+  const name = basename(path);
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch {
+    throw new Error(`Prompt file '${name}' could not be read`);
+  }
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
-  } catch (err) {
-    throw new Error(`Prompt file '${path}' is not valid JSON: ${err instanceof Error ? err.message : String(err)}`);
+  } catch {
+    throw new Error(`Prompt file '${name}' is not valid JSON`);
   }
   const result = EvalPromptSetSchema.safeParse(parsed);
   if (!result.success) {
-    const issues = result.error.issues.map((i) => `  - ${i.path.join(".") || "(juuri)"}: ${i.message}`).join("\n");
-    throw new Error(`Prompt file '${path}' is invalid:\n${issues}`);
+    const issues = result.error.issues.map((i) => `  - ${i.path.join(".") || "(root)"}: ${i.message}`).join("\n");
+    throw new Error(`Prompt file '${name}' is invalid:\n${issues}`);
   }
   return result.data;
 }
