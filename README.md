@@ -739,6 +739,14 @@ CONFIG_PATH=$PWD/config.example.yaml npx @tonyweckstrom/mcp-doctor --env CONFIG_
   clients (`get_usage` shows it).
 - The input token count is an estimate (character count / 3); the reservation
   is corrected to the actual `usage` value only after the call.
+- A failed or empty model call is not refunded: the reservation made before
+  the call (input estimate + `max_tokens`) stays in the daily budget, and so
+  does the reservation of a successful call whose response has no `usage`
+  field.
+- The cost limits (1,000,000 tokens per day, `max_tokens` 4096, 200 calls per
+  `run_eval`, the `Europe/Helsinki` day boundary) are constants in
+  `src/lib/limits.ts`. They cannot be changed with configuration or an
+  environment variable, only by editing the code and rebuilding.
 - `list_models` fetches the available models from the server's `/models`
   endpoint (unreleased, see the [CHANGELOG](CHANGELOG.md)). The result is
   cached (`provider.modelsCacheTtlMs`, default 60 s) and the request times
